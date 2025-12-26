@@ -1,5 +1,8 @@
 package com.svalero.fancollector.exception;
 
+import com.svalero.fancollector.exception.domain.ColeccionNoEncontradaException;
+import com.svalero.fancollector.exception.domain.UsuarioNoEncontradoException;
+import com.svalero.fancollector.exception.validation.EmailDuplicadoException;
 import com.svalero.fancollector.util.ErrorRespuesta;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +25,21 @@ public class GlobalExceptionHandler {
         ErrorRespuesta respuesta = new ErrorRespuesta
                 (400, "Errores de validación", errores);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(respuesta);
+    }
+
+    @ExceptionHandler(EmailDuplicadoException.class)
+    public ResponseEntity<ErrorRespuesta> handleEmailDuplicado(EmailDuplicadoException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorRespuesta.error400(ex.getMessage()));
+    }
+
+    @ExceptionHandler(UsuarioNoEncontradoException.class)
+    public ResponseEntity<ErrorRespuesta> handleUsuarioNoEncontrado(UsuarioNoEncontradoException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorRespuesta.error404(ex.getMessage()));
+    }
+
+    @ExceptionHandler(ColeccionNoEncontradaException.class)
+    public ResponseEntity<ErrorRespuesta> handleColeccionNoEncontrada(ColeccionNoEncontradaException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorRespuesta.error404(ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
