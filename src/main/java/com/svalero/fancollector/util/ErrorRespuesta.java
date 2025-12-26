@@ -21,6 +21,10 @@ public class ErrorRespuesta {
         this.errors = new HashMap<>();
     }
 
+    public static ErrorRespuesta error400(String message) {return new ErrorRespuesta(400, message);}
+
+    public static ErrorRespuesta error404(String message) {return new ErrorRespuesta(404, message);}
+
     public static ErrorRespuesta error500(String message) {return new ErrorRespuesta(500, message);}
 
 }
