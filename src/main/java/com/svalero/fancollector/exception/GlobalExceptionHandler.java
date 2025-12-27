@@ -1,6 +1,7 @@
 package com.svalero.fancollector.exception;
 
 import com.svalero.fancollector.exception.domain.ColeccionNoEncontradaException;
+import com.svalero.fancollector.exception.domain.ItemNoEncontradoException;
 import com.svalero.fancollector.exception.domain.UsuarioNoEncontradoException;
 import com.svalero.fancollector.exception.validation.EmailDuplicadoException;
 import com.svalero.fancollector.util.ErrorRespuesta;
@@ -39,6 +40,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ColeccionNoEncontradaException.class)
     public ResponseEntity<ErrorRespuesta> handleColeccionNoEncontrada(ColeccionNoEncontradaException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorRespuesta.error404(ex.getMessage()));
+    }
+
+    @ExceptionHandler(ItemNoEncontradoException.class)
+    public ResponseEntity<ErrorRespuesta> handleItemNoEncontrado(ItemNoEncontradoException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorRespuesta.error404(ex.getMessage()));
     }
 
