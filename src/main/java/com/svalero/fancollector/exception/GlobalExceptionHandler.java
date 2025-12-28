@@ -2,8 +2,10 @@ package com.svalero.fancollector.exception;
 
 import com.svalero.fancollector.exception.domain.ColeccionNoEncontradaException;
 import com.svalero.fancollector.exception.domain.ItemNoEncontradoException;
+import com.svalero.fancollector.exception.domain.UsuarioColeccionNoEncontradoException;
 import com.svalero.fancollector.exception.domain.UsuarioNoEncontradoException;
 import com.svalero.fancollector.exception.validation.EmailDuplicadoException;
+import com.svalero.fancollector.exception.validation.RelacionYaExisteException;
 import com.svalero.fancollector.util.ErrorRespuesta;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +35,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorRespuesta.error400(ex.getMessage()));
     }
 
+    @ExceptionHandler(RelacionYaExisteException.class)
+    public ResponseEntity<ErrorRespuesta> handleRelacionYaExiste(RelacionYaExisteException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorRespuesta.error400(ex.getMessage()));
+    }
+
     @ExceptionHandler(UsuarioNoEncontradoException.class)
     public ResponseEntity<ErrorRespuesta> handleUsuarioNoEncontrado(UsuarioNoEncontradoException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorRespuesta.error404(ex.getMessage()));
@@ -46,6 +53,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ItemNoEncontradoException.class)
     public ResponseEntity<ErrorRespuesta> handleItemNoEncontrado(ItemNoEncontradoException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorRespuesta.error404(ex.getMessage()));
+    }
+
+    @ExceptionHandler(UsuarioColeccionNoEncontradoException.class)
+    public ResponseEntity<ErrorRespuesta> handleUsuarioColeccionNoEncontrado(UsuarioColeccionNoEncontradoException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorRespuesta.error404(ex.getMessage()));
+
     }
 
     @ExceptionHandler(Exception.class)
