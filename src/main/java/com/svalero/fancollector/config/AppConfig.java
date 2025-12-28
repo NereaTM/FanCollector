@@ -3,10 +3,8 @@ package com.svalero.fancollector.config;
 import com.svalero.fancollector.domain.Coleccion;
 import com.svalero.fancollector.domain.Item;
 import com.svalero.fancollector.domain.UsuarioColeccion;
-import com.svalero.fancollector.dto.ColeccionOutDTO;
-import com.svalero.fancollector.dto.ItemInDTO;
-import com.svalero.fancollector.dto.ItemOutDTO;
-import com.svalero.fancollector.dto.UsuarioColeccionOutDTO;
+import com.svalero.fancollector.domain.UsuarioItem;
+import com.svalero.fancollector.dto.*;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.context.annotation.Bean;
@@ -53,6 +51,29 @@ public class AppConfig {
                             UsuarioColeccionOutDTO::setIdUsuario);
                     mapper.map(src -> src.getColeccion().getId(),
                             UsuarioColeccionOutDTO::setIdColeccion);
+                });
+
+        // UsuarioItem a UsuarioItemOutDTO (salida)
+        mm.createTypeMap(UsuarioItem.class, UsuarioItemOutDTO.class)
+                .addMappings(mapper -> {
+
+                    // parte de usuario
+                    mapper.map(src -> src.getUsuario().getId(),
+                            UsuarioItemOutDTO::setIdUsuario);
+                    mapper.map(src -> src.getUsuario().getNombre(),
+                            UsuarioItemOutDTO::setNombreUsuario);
+
+                    // parte de coleccion
+                    mapper.map(src -> src.getColeccion().getId(),
+                            UsuarioItemOutDTO::setIdColeccion);
+                    mapper.map(src -> src.getColeccion().getNombre(),
+                            UsuarioItemOutDTO::setNombreColeccion);
+
+                    // parte de item
+                    mapper.map(src -> src.getItem().getId(),
+                            UsuarioItemOutDTO::setIdItem);
+                    mapper.map(src -> src.getItem().getNombre(),
+                            UsuarioItemOutDTO::setNombreItem);
                 });
 
         return mm;

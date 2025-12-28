@@ -1,0 +1,164 @@
+package com.svalero.fancollector.service;
+
+import com.svalero.fancollector.domain.Coleccion;
+import com.svalero.fancollector.domain.Item;
+import com.svalero.fancollector.domain.Usuario;
+import com.svalero.fancollector.domain.UsuarioItem;
+import com.svalero.fancollector.domain.enums.EstadoItem;
+import com.svalero.fancollector.dto.UsuarioItemInDTO;
+import com.svalero.fancollector.dto.UsuarioItemOutDTO;
+import com.svalero.fancollector.dto.UsuarioItemPutDTO;
+import com.svalero.fancollector.exception.domain.ColeccionNoEncontradaException;
+import com.svalero.fancollector.exception.domain.ItemNoEncontradoException;
+import com.svalero.fancollector.exception.domain.UsuarioItemNoEncontradoException;
+import com.svalero.fancollector.exception.domain.UsuarioNoEncontradoException;
+import com.svalero.fancollector.exception.validation.RelacionYaExisteException;
+import com.svalero.fancollector.repository.ColeccionRepository;
+import com.svalero.fancollector.repository.ItemRepository;
+import com.svalero.fancollector.repository.UsuarioItemRepository;
+import com.svalero.fancollector.repository.UsuarioRepository;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+public class UsuarioItemServiceImpl implements UsuarioItemService {
+
+    @Autowired
+    private UsuarioItemRepository usuarioItemRepository;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private ItemRepository itemRepository;
+
+    @Autowired
+    private ColeccionRepository coleccionRepository;
+
+    @Autowired
+    private ModelMapper modelMapper;
+
+    @Override
+    public UsuarioItemOutDTO crear(UsuarioItemInDTO dto)
+            throws UsuarioNoEncontradoException, ItemNoEncontradoException, ColeccionNoEncontradaException {
+
+        if (usuarioItemRepository.existsByUsuarioIdAndColeccionIdAndItemId(
+                dto.getIdUsuario(), dto.getIdColeccion(), dto.getIdItem())) {
+            throw new RelacionYaExisteException();
+        }
+
+        Usuario usuario = usuarioRepository.findById(dto.getIdUsuario())
+                .orElseThrow(() -> new UsuarioNoEncontradoException(dto.getIdUsuario()));
+
+        Coleccion coleccion = coleccionRepository.findById(dto.getIdColeccion())
+                .orElseThrow(() -> new ColeccionNoEncontradaException(dto.getIdColeccion()));
+
+        Item item = itemRepository.findById(dto.getIdItem())
+                .orElseThrow(() -> new ItemNoEncontradoException(dto.getIdItem()));
+
+        if (!item.getColeccion().getId().equals(coleccion.getId())) {
+            throw new RuntimeException("El ítem no pertenece a la colección indicada");
+        }
+
+        EstadoItem estado = dto.getEstado() != null ? dto.getEstado() : EstadoItem.BUSCO;
+        boolean esVisible = dto.getEsVisible() != null ? dto.getEsVisible() : true;
+        Integer cantidad = normalizarCantidad(estado, dto.getCantidad());
+
+        UsuarioItem ui = new UsuarioItem();
+        ui.setUsuario(usuario);
+        ui.setColeccion(coleccion);
+        ui.setItem(item);
+        ui.setEstado(estado);
+        ui.setEsVisible(esVisible);
+        ui.setCantidad(cantidad);
+        ui.setNotas(dto.getNotas());
+
+        return modelMapper.map(usuarioItemRepository.save(ui),UsuarioItemOutDTO.class);
+    }
+
+    @Override
+    public UsuarioItemOutDTO buscarPorId(Long id)throws UsuarioItemNoEncontradoException {
+        UsuarioItem ui = usuarioItemRepository.findById(id)
+                .orElseThrow(() -> new UsuarioItemNoEncontradoException(id));
+        return modelMapper.map(ui, UsuarioItemOutDTO.class);
+    }
+
+    @Override
+    public List<UsuarioItemOutDTO> listar(
+            Long idUsuario, Long idItem, Long idColeccion, EstadoItem estado, Boolean esVisible) {
+
+        boolean noHayFiltros = true;
+
+        if (idUsuario != null) noHayFiltros = false;
+        if (idItem != null) noHayFiltros = false;
+        if (idColeccion != null) noHayFiltros = false;
+        if (estado != null) noHayFiltros = false;
+        if (esVisible != null) noHayFiltros = false;
+
+        List<UsuarioItem> items;
+
+        if (noHayFiltros) {
+            items = usuarioItemRepository.findAll();
+        } else {
+            items = usuarioItemRepository.buscarPorFiltros(
+                    idUsuario, idItem, idColeccion, estado, esVisible);
+        }
+
+        List<UsuarioItemOutDTO> resultado = new ArrayList<>();
+        for (UsuarioItem ui : items) {resultado.add(modelMapper.map(ui, UsuarioItemOutDTO.class));}
+        return resultado;
+    }
+
+    @Override
+    public UsuarioItemOutDTO actualizarCompleto(Long id, UsuarioItemPutDTO dto)
+            throws UsuarioItemNoEncontradoException {
+
+        UsuarioItem existente = usuarioItemRepository.findById(id)
+                .orElseThrow(() -> new UsuarioItemNoEncontradoException(id));
+
+        if (dto.getEstado() != null) {
+            existente.setEstado(dto.getEstado());
+            existente.setCantidad(normalizarCantidad(dto.getEstado(), existente.getCantidad()));}
+
+        if (dto.getCantidad() != null) {
+            existente.setCantidad(normalizarCantidad(existente.getEstado(), dto.getCantidad()));}
+
+        if (dto.getNotas() != null) {
+            existente.setNotas(dto.getNotas());}
+
+        if (dto.getEsVisible() != null) {
+            existente.setEsVisible(dto.getEsVisible());}
+
+        return modelMapper.map(usuarioItemRepository.save(existente), UsuarioItemOutDTO.class);
+    }
+
+    @Override
+    public UsuarioItemOutDTO actualizarVisibilidad(Long id, Boolean esVisible)
+            throws UsuarioItemNoEncontradoException {
+
+        UsuarioItem usuarioItem = usuarioItemRepository.findById(id)
+                .orElseThrow(() -> new UsuarioItemNoEncontradoException(id));
+
+        usuarioItem.setEsVisible(esVisible);
+
+        return modelMapper.map(usuarioItemRepository.save(usuarioItem),UsuarioItemOutDTO.class);
+    }
+
+    @Override
+    public void eliminar(Long id) throws UsuarioItemNoEncontradoException {
+
+        if (!usuarioItemRepository.existsById(id))
+        {throw new UsuarioItemNoEncontradoException(id);}
+        usuarioItemRepository.deleteById(id);
+    }
+
+    private Integer normalizarCantidad(EstadoItem estado, Integer cantidad) {
+        if (estado == EstadoItem.BUSCO) return 0;
+        if (cantidad == null || cantidad < 1) return 1;
+        return cantidad;
+    }
+}
