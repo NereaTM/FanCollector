@@ -2,9 +2,11 @@ package com.svalero.fancollector.config;
 
 import com.svalero.fancollector.domain.Coleccion;
 import com.svalero.fancollector.domain.Item;
+import com.svalero.fancollector.domain.UsuarioColeccion;
 import com.svalero.fancollector.dto.ColeccionOutDTO;
 import com.svalero.fancollector.dto.ItemInDTO;
 import com.svalero.fancollector.dto.ItemOutDTO;
+import com.svalero.fancollector.dto.UsuarioColeccionOutDTO;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.context.annotation.Bean;
@@ -42,6 +44,15 @@ public class AppConfig {
                 .addMappings(mapper -> {
                     mapper.skip(Item::setId);
                     mapper.skip(Item::setColeccion);
+                });
+
+        // UsuarioColeccion a UsuarioColeccionOutDTO (salida)
+        mm.createTypeMap(UsuarioColeccion.class, UsuarioColeccionOutDTO.class)
+                .addMappings(mapper -> {
+                    mapper.map(src -> src.getUsuario().getId(),
+                            UsuarioColeccionOutDTO::setIdUsuario);
+                    mapper.map(src -> src.getColeccion().getId(),
+                            UsuarioColeccionOutDTO::setIdColeccion);
                 });
 
         return mm;
