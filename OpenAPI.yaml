@@ -1,0 +1,2986 @@
+openapi: 3.0.3
+info:
+  title: FanCollector API
+  description: API REST para gestionar colecciones de fans. Permite a los usuarios crear y administrar colecciones de items coleccionables como photocards, albums, merchandising, etc.
+  version: 1.0.0
+  contact:
+    name: NereaTM
+    email: admin@fancollector.com
+
+servers:
+  - url: http://localhost:8080
+    description: Servidor de desarrollo local
+
+tags:
+  - name: Usuarios
+    description: Operaciones relacionadas con usuarios
+  - name: Colecciones
+    description: Operaciones relacionadas con colecciones
+  - name: Items
+    description: Operaciones relacionadas con items
+  - name: Usuario-Colecciones
+    description: Relacion entre usuarios y colecciones
+  - name: Usuario-Items
+    description: Relacion entre usuarios e items
+
+components:
+  schemas:
+    # ENUMS
+    RolUsuario:
+      type: string
+      enum:
+        - USER
+        - ADMIN
+      example: USER
+
+    EstadoItem:
+      type: string
+      enum:
+        - TENGO
+        - BUSCO
+        - DROPEO
+        - EN_CAMINO
+      example: TENGO
+
+    RarezaItem:
+      type: string
+      enum:
+        - COMUN
+        - RARO
+        - EPICO
+        - LEGENDARIO
+      example: RARO
+
+    # DTOs IN
+    UsuarioInDTO:
+      type: object
+      required:
+        - nombre
+        - email
+        - contrasena
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+          example: Nerea Test
+        email:
+          type: string
+          format: email
+          example: nerea.test@gmail.com
+        contrasena:
+          type: string
+          minLength: 4
+          maxLength: 30
+          example: password123
+        urlAvatar:
+          type: string
+          example: ejemplo/avatar.jpg
+        descripcion:
+          type: string
+          example: Fan de BTS y anime
+        contactoPublico:
+          type: string
+          example: "@nereatest"
+
+    ColeccionInDTO:
+      type: object
+      required:
+        - idCreador
+        - nombre
+        - categoria
+      properties:
+        idCreador:
+          type: integer
+          format: int64
+          example: 1
+        nombre:
+          type: string
+          minLength: 1
+          example: BTS Love Yourself Collection
+        descripcion:
+          type: string
+          example: Coleccion completa de la era Love Yourself
+        categoria:
+          type: string
+          minLength: 1
+          example: KPOP
+        imagenPortada:
+          type: string
+          example: ejemplo/portada-bts.jpg
+        esPublica:
+          type: boolean
+          example: true
+        usableComoPlantilla:
+          type: boolean
+          example: false
+
+    ItemInDTO:
+      type: object
+      required:
+        - idColeccion
+        - nombre
+        - tipo
+      properties:
+        idColeccion:
+          type: integer
+          format: int64
+          example: 1
+        nombre:
+          type: string
+          minLength: 1
+          example: RM - Map of the Soul 7 Photocard
+        descripcion:
+          type: string
+          example: Photocard oficial de RM del album MOTS:7
+        imagenUrl:
+          type: string
+          example: ejemplo/rm-photocard.jpg
+        tipo:
+          type: string
+          minLength: 1
+          example: Photocard
+        rareza:
+          $ref: '#/components/schemas/RarezaItem'
+        anioLanzamiento:
+          type: integer
+          example: 2020
+
+    UsuarioColeccionInDTO:
+      type: object
+      required:
+        - idUsuario
+        - idColeccion
+      properties:
+        idUsuario:
+          type: integer
+          format: int64
+          example: 1
+        idColeccion:
+          type: integer
+          format: int64
+          example: 2
+        esFavorita:
+          type: boolean
+          default: false
+          example: true
+        esCreador:
+          type: boolean
+          default: false
+          example: false
+
+    UsuarioItemInDTO:
+      type: object
+      required:
+        - idUsuario
+        - idItem
+        - idColeccion
+      properties:
+        idUsuario:
+          type: integer
+          format: int64
+          example: 1
+        idItem:
+          type: integer
+          format: int64
+          example: 5
+        idColeccion:
+          type: integer
+          format: int64
+          example: 1
+        estado:
+          $ref: '#/components/schemas/EstadoItem'
+        esVisible:
+          type: boolean
+          example: true
+        notas:
+          type: string
+          example: En perfecto estado, con sobre original
+        cantidad:
+          type: integer
+          minimum: 0
+          example: 2
+
+    # DTOs PUT
+    ColeccionPutDTO:
+      type: object
+      required:
+        - nombre
+        - categoria
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+          example: BTS Love Yourself - Updated
+        descripcion:
+          type: string
+          example: Descripcion actualizada
+        categoria:
+          type: string
+          minLength: 1
+          example: KPOP
+        imagenPortada:
+          type: string
+          example: ejemplo/nueva-portada.jpg
+        esPublica:
+          type: boolean
+          example: false
+        usableComoPlantilla:
+          type: boolean
+          example: true
+
+    ItemPutDTO:
+      type: object
+      required:
+        - nombre
+        - tipo
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+          example: RM - MOTS 7 Edition Updated
+        descripcion:
+          type: string
+          example: Descripcion actualizada
+        imagenUrl:
+          type: string
+          example: ejemplo/rm-updated.jpg
+        tipo:
+          type: string
+          minLength: 1
+          example: Photocard
+        rareza:
+          $ref: '#/components/schemas/RarezaItem'
+        anioLanzamiento:
+          type: integer
+          example: 2021
+
+    UsuarioColeccionPutDTO:
+      type: object
+      properties:
+        esFavorita:
+          type: boolean
+          example: false
+        esCreador:
+          type: boolean
+          example: true
+
+    UsuarioItemPutDTO:
+      type: object
+      properties:
+        estado:
+          $ref: '#/components/schemas/EstadoItem'
+        esVisible:
+          type: boolean
+          example: false
+        notas:
+          type: string
+          example: Intercambio pendiente
+        cantidad:
+          type: integer
+          minimum: 0
+          example: 3
+
+    # DTOs PATCH
+    UsuarioPasswordDTO:
+      type: object
+      required:
+        - contrasena
+      properties:
+        contrasena:
+          type: string
+          minLength: 4
+          example: newPassword456
+
+    ColeccionPublicoDTO:
+      type: object
+      required:
+        - esPublica
+      properties:
+        esPublica:
+          type: boolean
+          example: true
+
+    ColeccionPlantillaDTO:
+      type: object
+      required:
+        - usableComoPlantilla
+      properties:
+        usableComoPlantilla:
+          type: boolean
+          example: true
+
+    ItemRarezaDTO:
+      type: object
+      required:
+        - rareza
+      properties:
+        rareza:
+          $ref: '#/components/schemas/RarezaItem'
+
+    UsuarioColeccionFavoritaDTO:
+      type: object
+      required:
+        - esFavorita
+      properties:
+        esFavorita:
+          type: boolean
+          example: true
+
+    UsuarioItemVisibleDTO:
+      type: object
+      required:
+        - esVisible
+      properties:
+        esVisible:
+          type: boolean
+          example: false
+
+    # DTOs OUT
+    UsuarioOutDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        nombre:
+          type: string
+          example: Nerea Test
+        email:
+          type: string
+          format: email
+          example: nerea.test@gmail.com
+        rol:
+          $ref: '#/components/schemas/RolUsuario'
+        urlAvatar:
+          type: string
+          example: ejemplo/avatar.jpg
+        descripcion:
+          type: string
+          example: Fan de BTS y anime
+        contactoPublico:
+          type: string
+          example: "@nereatest"
+        fechaRegistro:
+          type: string
+          format: date-time
+          example: "2025-12-01T10:30:00"
+
+    ColeccionOutDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        idCreador:
+          type: integer
+          format: int64
+          example: 1
+        nombreCreador:
+          type: string
+          example: Nerea Test
+        nombre:
+          type: string
+          example: BTS Love Yourself Collection
+        descripcion:
+          type: string
+          example: Coleccion completa de la era Love Yourself
+        categoria:
+          type: string
+          example: KPOP
+        imagenPortada:
+          type: string
+          example: ejemplo/portada-bts.jpg
+        fechaCreacion:
+          type: string
+          format: date-time
+          example: "2025-12-03T13:11:41"
+        esPublica:
+          type: boolean
+          example: true
+        usableComoPlantilla:
+          type: boolean
+          example: false
+
+    ItemOutDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 5
+        idColeccion:
+          type: integer
+          format: int64
+          example: 1
+        nombreColeccion:
+          type: string
+          example: BTS Love Yourself Collection
+        nombre:
+          type: string
+          example: RM - Map of the Soul 7 Photocard
+        descripcion:
+          type: string
+          example: Photocard oficial de RM del album MOTS:7
+        imagenUrl:
+          type: string
+          example: ejemplo/rm-photocard.jpg
+        tipo:
+          type: string
+          example: Photocard
+        rareza:
+          $ref: '#/components/schemas/RarezaItem'
+        anioLanzamiento:
+          type: integer
+          example: 2020
+
+    UsuarioColeccionOutDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 3
+        idUsuario:
+          type: integer
+          format: int64
+          example: 1
+        idColeccion:
+          type: integer
+          format: int64
+          example: 2
+        esFavorita:
+          type: boolean
+          example: true
+        esCreador:
+          type: boolean
+          example: false
+        fechaAgregada:
+          type: string
+          format: date-time
+          example: "2025-12-05T14:20:00"
+
+    UsuarioItemOutDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 7
+        idUsuario:
+          type: integer
+          format: int64
+          example: 1
+        nombreUsuario:
+          type: string
+          example: Nerea Test
+        idColeccion:
+          type: integer
+          format: int64
+          example: 1
+        nombreColeccion:
+          type: string
+          example: BTS Love Yourself Collection
+        idItem:
+          type: integer
+          format: int64
+          example: 5
+        nombreItem:
+          type: string
+          example: RM - Map of the Soul 7 Photocard
+        estado:
+          $ref: '#/components/schemas/EstadoItem'
+        cantidad:
+          type: integer
+          example: 2
+        notas:
+          type: string
+          example: En perfecto estado, con sobre original
+        esVisible:
+          type: boolean
+          example: true
+        fechaRegistro:
+          type: string
+          format: date-time
+          example: "2025-12-06T09:15:00"
+
+    # ERROR
+    ErrorRespuesta:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          example: 404
+        message:
+          type: string
+          example: Usuario con id 999 no encontrado
+        errors:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            nombre: "El nombre no puede estar en blanco"
+            email: "El email debe tener un formato valido"
+paths:
+  # USUARIOS
+  /usuarios:
+    post:
+      tags:
+        - Usuarios
+      summary: Crear un nuevo usuario
+      description: Crea un nuevo usuario en el sistema
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioInDTO'
+            examples:
+              usuarioBasico:
+                summary: Usuario basico
+                value:
+                  nombre: Nerea Test
+                  email: nerea.test@gmail.com
+                  contrasena: password123
+              usuarioCompleto:
+                summary: Usuario con todos los campos
+                value:
+                  nombre: Juan Test
+                  email: juan.test@gmail.com
+                  contrasena: securePass456
+                  urlAvatar: ejemplo/juan-avatar.jpg
+                  descripcion: Coleccionista de Pokemon desde 1999
+                  contactoPublico: "@juanpokemon"
+      responses:
+        '201':
+          description: Usuario creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioOutDTO'
+              examples:
+                usuarioCreado:
+                  summary: Usuario recien creado
+                  value:
+                    id: 3
+                    nombre: Nerea Test
+                    email: nerea.test@gmail.com
+                    rol: USER
+                    urlAvatar: null
+                    descripcion: null
+                    contactoPublico: null
+                    fechaRegistro: "2025-12-13T15:45:00"
+                usuarioCompletoCreado:
+                  summary: Usuario completo creado
+                  value:
+                    id: 4
+                    nombre: Juan Test
+                    email: juan.test@gmail.com
+                    rol: USER
+                    urlAvatar: ejemplo/juan-avatar.jpg
+                    descripcion: Coleccionista de Pokemon desde 1999
+                    contactoPublico: "@juanpokemon"
+                    fechaRegistro: "2025-12-13T16:00:00"
+        '400':
+          description: Datos de entrada invalidos o email duplicado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              examples:
+                validacionError:
+                  summary: Errores de validacion
+                  value:
+                    statusCode: 400
+                    message: Errores de validacion
+                    errors:
+                      nombre: El nombre no puede estar en blanco
+                      email: El email debe tener un formato valido
+                      contrasena: La contrasena debe tener al menos 4 caracteres
+                emailDuplicado:
+                  summary: Email ya registrado
+                  value:
+                    statusCode: 400
+                    message: El email nerea.test@gmail.com ya esta registrado
+                    errors: { }
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: { }
+
+    get:
+      tags:
+        - Usuarios
+      summary: Listar usuarios con filtros opcionales
+      description: Obtiene una lista de usuarios. Se pueden aplicar filtros por nombre, email o rol.
+      parameters:
+        - name: nombre
+          in: query
+          description: Filtrar por nombre de usuario
+          required: false
+          schema:
+            type: string
+          example: Nerea
+        - name: email
+          in: query
+          description: Filtrar por email
+          required: false
+          schema:
+            type: string
+          example: nerea.test@gmail.com
+        - name: rol
+          in: query
+          description: Filtrar por rol de usuario
+          required: false
+          schema:
+            $ref: '#/components/schemas/RolUsuario'
+      responses:
+        '200':
+          description: Lista de usuarios obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UsuarioOutDTO'
+              examples:
+                listaUsuarios:
+                  summary: Lista con dos usuarios
+                  value:
+                    - id: 1
+                      nombre: Nerea Test
+                      email: nerea.test@gmail.com
+                      rol: USER
+                      urlAvatar: ejemplo/nerea.jpg
+                      descripcion: Fan de BTS y anime
+                      contactoPublico: "@nereatest"
+                      fechaRegistro: "2025-12-01T10:30:00"
+                    - id: 2
+                      nombre: Juan Test
+                      email: juan.test@gmail.com
+                      rol: ADMIN
+                      urlAvatar: ejemplo/juan.jpg
+                      descripcion: Coleccionista de Pokemon
+                      contactoPublico: "@juantest"
+                      fechaRegistro: "2025-11-15T08:20:00"
+                listaVacia:
+                  summary: Sin usuarios encontrados
+                  value: []
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+
+
+  /usuarios/{id}:
+    get:
+      tags:
+        - Usuarios
+      summary: Obtener un usuario por ID
+      description: Recupera la informacion de un usuario especifico
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: Usuario encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioOutDTO'
+              examples:
+                usuarioEncontrado:
+                  summary: Usuario existente
+                  value:
+                    id: 1
+                    nombre: Nerea Test
+                    email: nerea.test@gmail.com
+                    rol: USER
+                    urlAvatar: ejemplo/nerea.jpg
+                    descripcion: Fan de BTS y anime
+                    contactoPublico: "@nereatest"
+                    fechaRegistro: "2025-12-01T10:30:00"
+                usuarioAdmin:
+                  summary: Usuario administrador
+                  value:
+                    id: 2
+                    nombre: Juan Test
+                    email: juan.test@gmail.com
+                    rol: ADMIN
+                    urlAvatar: ejemplo/juan.jpg
+                    descripcion: Coleccionista de Pokemon
+                    contactoPublico: "@juantest"
+                    fechaRegistro: "2025-11-15T08:20:00"
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message: Usuario con id 999 no encontrado
+                errors: {}
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+
+    put:
+      tags:
+        - Usuarios
+      summary: Actualizar un usuario
+      description: Actualiza la informacion de un usuario existente
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioInDTO'
+            examples:
+              actualizacionBasica:
+                summary: Actualizacion basica
+                value:
+                  nombre: Nerea Updated
+                  email: nerea.updated@gmail.com
+                  contrasena: newPassword123
+              actualizacionCompleta:
+                summary: Actualizacion completa
+                value:
+                  nombre: Juan Updated Test
+                  email: juan.updated@gmail.com
+                  contrasena: newSecurePass789
+                  urlAvatar: ejemplo/juan-new.jpg
+                  descripcion: Coleccionista experto de Pokemon y Yu-Gi-Oh
+                  contactoPublico: "@juanupdated"
+      responses:
+        '200':
+          description: Usuario actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioOutDTO'
+              examples:
+                usuarioActualizado:
+                  summary: Usuario actualizado
+                  value:
+                    id: 1
+                    nombre: Nerea Updated
+                    email: nerea.updated@gmail.com
+                    rol: USER
+                    urlAvatar: ejemplo/nerea.jpg
+                    descripcion: Fan de BTS y anime
+                    contactoPublico: "@nereatest"
+                    fechaRegistro: "2025-12-01T10:30:00"
+                usuarioCompletoActualizado:
+                  summary: Usuario completamente actualizado
+                  value:
+                    id: 2
+                    nombre: Juan Updated Test
+                    email: juan.updated@gmail.com
+                    rol: ADMIN
+                    urlAvatar: ejemplo/juan-new.jpg
+                    descripcion: Coleccionista experto de Pokemon y Yu-Gi-Oh
+                    contactoPublico: "@juanupdated"
+                    fechaRegistro: "2025-11-15T08:20:00"
+        '400':
+          description: Datos de entrada invalidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 400
+                message: Errores de validacion
+                errors:
+                  email: El email debe tener un formato valido
+                  contrasena: La contrasena debe tener al menos 4 caracteres
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message: Usuario con id 999 no encontrado
+                errors: {}
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+
+    delete:
+      tags:
+        - Usuarios
+      summary: Eliminar un usuario
+      description: Elimina un usuario del sistema
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: integer
+            format: int64
+          example: 4
+      responses:
+        '204':
+          description: Usuario eliminado exitosamente
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message: Usuario con id 999 no encontrado
+                errors: {}
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+
+  /usuarios/{id}/contrasena:
+    patch:
+      tags:
+        - Usuarios
+      summary: Actualizar contrasena de usuario
+      description: Actualiza unicamente la contrasena de un usuario
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioPasswordDTO'
+            examples:
+              nuevaContrasena:
+                summary: Cambio de contrasena
+                value:
+                  contrasena: newSecurePassword123
+              contrasenaCorta:
+                summary: Contrasena minima valida
+                value:
+                  contrasena: "1234"
+      responses:
+        '200':
+          description: Contrasena actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioOutDTO'
+              examples:
+                contrasenaActualizada:
+                  summary: Usuario con contrasena actualizada
+                  value:
+                    id: 1
+                    nombre: Nerea Test
+                    email: nerea.test@gmail.com
+                    rol: USER
+                    urlAvatar: ejemplo/nerea.jpg
+                    descripcion: Fan de BTS y anime
+                    contactoPublico: "@nereatest"
+                    fechaRegistro: "2025-12-01T10:30:00"
+        '400':
+          description: Contrasena invalida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 400
+                message: Errores de validacion
+                errors:
+                  contrasena: La contrasena debe tener al menos 4 caracteres
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message: Usuario con id 999 no encontrado
+                errors: {}
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+  # COLECCIONES
+  /colecciones:
+    post:
+      tags:
+        - Colecciones
+      summary: Crear una nueva coleccion
+      description: Crea una nueva coleccion en el sistema
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ColeccionInDTO'
+            examples:
+              coleccionBasica:
+                summary: Coleccion basica
+                value:
+                  idCreador: 1
+                  nombre: BTS Love Yourself
+                  descripcion: Solo la era Love Yourself
+                  categoria: KPOP
+                  imagenPortada: ejemplo/bts-ly.jpg
+                  esPublica: true
+                  usableComoPlantilla: false
+              coleccionPlantilla:
+                summary: Coleccion como plantilla
+                value:
+                  idCreador: 2
+                  nombre: Pokemon Cartas Base
+                  descripcion: Set base de Pokemon TCG
+                  categoria: POKEMON
+                  imagenPortada: ejemplo/pokemon-base.jpg
+                  esPublica: true
+                  usableComoPlantilla: true
+      responses:
+        '201':
+          description: Coleccion creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ColeccionOutDTO'
+              examples:
+                coleccionCreada:
+                  summary: Coleccion recien creada
+                  value:
+                    id: 3
+                    idCreador: 1
+                    nombreCreador: Nerea Test
+                    nombre: BTS Love Yourself
+                    descripcion: Solo la era Love Yourself
+                    categoria: KPOP
+                    imagenPortada: ejemplo/bts-ly.jpg
+                    fechaCreacion: "2025-12-13T16:30:00"
+                    esPublica: true
+                    usableComoPlantilla: false
+                coleccionPlantillaCreada:
+                  summary: Coleccion plantilla creada
+                  value:
+                    id: 4
+                    idCreador: 2
+                    nombreCreador: Juan Test
+                    nombre: Pokemon Cartas Base
+                    descripcion: Set base de Pokemon TCG
+                    categoria: POKEMON
+                    imagenPortada: ejemplo/pokemon-base.jpg
+                    fechaCreacion: "2025-12-13T17:00:00"
+                    esPublica: true
+                    usableComoPlantilla: true
+        '400':
+          description: Datos de entrada invalidos o usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              examples:
+                validacionError:
+                  summary: Errores de validacion
+                  value:
+                    statusCode: 400
+                    message: Errores de validacion
+                    errors:
+                      nombre: El nombre no puede estar en blanco
+                      categoria: La categoria no puede estar en blanco
+                      idCreador: El ID del creador es obligatorio
+        '404':
+          description: Usuario creador no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message: Usuario con id 999 no encontrado
+                errors: { }
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: { }
+
+    get:
+      tags:
+        - Colecciones
+      summary: Listar colecciones con filtros opcionales
+      description: Obtiene una lista de colecciones. Se pueden aplicar filtros por nombre, categoria o ID del creador.
+      parameters:
+        - name: nombre
+          in: query
+          description: Filtrar por nombre de coleccion
+          required: false
+          schema:
+            type: string
+          example: BTS
+        - name: categoria
+          in: query
+          description: Filtrar por categoria
+          required: false
+          schema:
+            type: string
+          example: KPOP
+        - name: idCreador
+          in: query
+          description: Filtrar por ID del creador
+          required: false
+          schema:
+            type: integer
+            format: int64
+          example: 1
+        - name: nombreCreador
+          in: query
+          description: Filtrar por nombre del creador
+          required: false
+          schema:
+             type: string
+          example: nerea
+      responses:
+        '200':
+          description: Lista de colecciones obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ColeccionOutDTO'
+              examples:
+                listaColecciones:
+                  summary: Lista con dos colecciones
+                  value:
+                    - id: 1
+                      idCreador: 1
+                      nombreCreador: Nerea Test
+                      nombre: BTS Love Yourself Collection
+                      descripcion: Coleccion completa de la era Love Yourself
+                      categoria: KPOP
+                      imagenPortada: ejemplo/bts-ly.jpg
+                      fechaCreacion: "2025-12-03T13:11:41"
+                      esPublica: true
+                      usableComoPlantilla: false
+                    - id: 2
+                      idCreador: 2
+                      nombreCreador: Juan Test
+                      nombre: Pokemon Primera Generacion
+                      descripcion: Cartas de Pokemon de la primera generacion
+                      categoria: POKEMON
+                      imagenPortada: ejemplo/pokemon-gen1.jpg
+                      fechaCreacion: "2025-11-20T09:30:00"
+                      esPublica: true
+                      usableComoPlantilla: true
+                listaVacia:
+                  summary: Sin colecciones encontradas
+                  value: []
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+
+  /colecciones/{id}:
+    get:
+      tags:
+        - Colecciones
+      summary: Obtener una coleccion por ID
+      description: Recupera la informacion de una coleccion especifica
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la coleccion
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: Coleccion encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ColeccionOutDTO'
+              examples:
+                coleccionEncontrada:
+                  summary: Coleccion existente
+                  value:
+                    id: 1
+                    idCreador: 1
+                    nombreCreador: Nerea Test
+                    nombre: BTS Love Yourself Collection
+                    descripcion: Coleccion completa de la era Love Yourself
+                    categoria: KPOP
+                    imagenPortada: ejemplo/bts-ly.jpg
+                    fechaCreacion: "2025-12-03T13:11:41"
+                    esPublica: true
+                    usableComoPlantilla: false
+                coleccionPlantilla:
+                  summary: Coleccion usable como plantilla
+                  value:
+                    id: 2
+                    idCreador: 2
+                    nombreCreador: Juan Test
+                    nombre: Pokemon Primera Generacion
+                    descripcion: Cartas de Pokemon de la primera generacion
+                    categoria: POKEMON
+                    imagenPortada: ejemplo/pokemon-gen1.jpg
+                    fechaCreacion: "2025-11-20T09:30:00"
+                    esPublica: true
+                    usableComoPlantilla: true
+        '404':
+          description: Coleccion no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message: Coleccion con id 999 no encontrada
+                errors: {}
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+
+    put:
+      tags:
+        - Colecciones
+      summary: Actualizar una coleccion
+      description: Actualiza la informacion de una coleccion existente
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la coleccion
+          schema:
+            type: integer
+            format: int64
+          example: 2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ColeccionPutDTO'
+            examples:
+              actualizacionBasica:
+                summary: Actualizacion basica
+                value:
+                  nombre: BTS Love Yourself Updated
+                  descripcion: Descripcion actualizada de la coleccion
+                  categoria: KPOP
+                  imagenPortada: ejemplo/bts-ly-new.jpg
+                  esPublica: true
+                  usableComoPlantilla: false
+              actualizacionCompleta:
+                summary: Actualizacion completa con cambio de visibilidad
+                value:
+                  nombre: Pokemon Gen 1 Complete Edition
+                  descripcion: Edicion completa actualizada
+                  categoria: POKEMON
+                  imagenPortada: ejemplo/pokemon-updated.jpg
+                  esPublica: false
+                  usableComoPlantilla: true
+      responses:
+        '200':
+          description: Coleccion actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ColeccionOutDTO'
+              examples:
+                coleccionActualizada:
+                  summary: Coleccion actualizada
+                  value:
+                    id: 2
+                    idCreador: 1
+                    nombreCreador: Nerea Test
+                    nombre: BTS Love Yourself Updated
+                    descripcion: Descripcion actualizada de la coleccion
+                    categoria: KPOP
+                    imagenPortada: ejemplo/bts-ly-new.jpg
+                    fechaCreacion: "2025-12-03T13:11:41"
+                    esPublica: true
+                    usableComoPlantilla: false
+        '400':
+          description: Datos de entrada invalidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 400
+                message: Errores de validacion
+                errors:
+                  nombre: El nombre no puede estar en blanco
+                  categoria: La categoria no puede estar en blanco
+        '404':
+          description: Coleccion no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message: Coleccion con id 999 no encontrada
+                errors: {}
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+
+    delete:
+      tags:
+        - Colecciones
+      summary: Eliminar una coleccion
+      description: Elimina una coleccion del sistema
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la coleccion
+          schema:
+            type: integer
+            format: int64
+          example: 2
+      responses:
+        '204':
+          description: Coleccion eliminada exitosamente
+        '404':
+          description: Coleccion no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message: Coleccion con id 999 no encontrada
+                errors: {}
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+
+  /colecciones/{id}/publico:
+    patch:
+      tags:
+        - Colecciones
+      summary: Actualizar visibilidad publica de coleccion
+      description: Cambia el estado publico/privado de una coleccion
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la coleccion
+          schema:
+            type: integer
+            format: int64
+          example: 2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ColeccionPublicoDTO'
+            examples:
+              hacerPublica:
+                summary: Hacer coleccion publica
+                value:
+                  esPublica: true
+              hacerPrivada:
+                summary: Hacer coleccion privada
+                value:
+                  esPublica: false
+      responses:
+        '200':
+          description: Visibilidad actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ColeccionOutDTO'
+              examples:
+                coleccionPublica:
+                  summary: Coleccion ahora publica
+                  value:
+                    id: 2
+                    idCreador: 1
+                    nombreCreador: Nerea Test
+                    nombre: BTS Love Yourself Collection
+                    descripcion: Coleccion completa de la era Love Yourself
+                    categoria: KPOP
+                    imagenPortada: ejemplo/bts-ly.jpg
+                    fechaCreacion: "2025-12-03T13:11:41"
+                    esPublica: true
+                    usableComoPlantilla: false
+                coleccionPrivada:
+                  summary: Coleccion ahora privada
+                  value:
+                    id: 2
+                    idCreador: 1
+                    nombreCreador: Nerea Test
+                    nombre: BTS Love Yourself Collection
+                    descripcion: Coleccion completa de la era Love Yourself
+                    categoria: KPOP
+                    imagenPortada: ejemplo/bts-ly.jpg
+                    fechaCreacion: "2025-12-03T13:11:41"
+                    esPublica: false
+                    usableComoPlantilla: false
+        '400':
+          description: Valor invalido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 400
+                message: Errores de validacion
+                errors:
+                  esPublica: El campo esPublica no puede ser nulo
+        '404':
+          description: Coleccion no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message: Coleccion con id 999 no encontrada
+                errors: {}
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+
+  /colecciones/{id}/plantilla:
+    patch:
+      tags:
+        - Colecciones
+      summary: Actualizar si coleccion es usable como plantilla
+      description: Cambia si una coleccion puede ser usada como plantilla por otros usuarios
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la coleccion
+          schema:
+            type: integer
+            format: int64
+          example: 2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ColeccionPlantillaDTO'
+            examples:
+              activarPlantilla:
+                summary: Activar como plantilla
+                value:
+                  usableComoPlantilla: true
+              desactivarPlantilla:
+                summary: Desactivar como plantilla
+                value:
+                  usableComoPlantilla: false
+      responses:
+        '200':
+          description: Estado de plantilla actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ColeccionOutDTO'
+              examples:
+                coleccionPlantilla:
+                  summary: Coleccion ahora es plantilla
+                  value:
+                    id: 2
+                    idCreador: 2
+                    nombreCreador: Juan Test
+                    nombre: Pokemon Primera Generacion
+                    descripcion: Cartas de Pokemon de la primera generacion
+                    categoria: POKEMON
+                    imagenPortada: ejemplo/pokemon-gen1.jpg
+                    fechaCreacion: "2025-11-20T09:30:00"
+                    esPublica: true
+                    usableComoPlantilla: true
+                coleccionNoPlantilla:
+                  summary: Coleccion ya no es plantilla
+                  value:
+                    id: 2
+                    idCreador: 2
+                    nombreCreador: Juan Test
+                    nombre: Pokemon Primera Generacion
+                    descripcion: Cartas de Pokemon de la primera generacion
+                    categoria: POKEMON
+                    imagenPortada: ejemplo/pokemon-gen1.jpg
+                    fechaCreacion: "2025-11-20T09:30:00"
+                    esPublica: true
+                    usableComoPlantilla: false
+        '400':
+          description: Valor invalido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 400
+                message: Errores de validacion
+                errors:
+                  usableComoPlantilla: El campo usableComoPlantilla no puede ser nulo
+        '404':
+          description: Coleccion no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message: Coleccion con id 999 no encontrada
+                errors: {}
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+  # ITEMS
+  /items:
+    post:
+      tags:
+        - Items
+      summary: Crear un nuevo item
+      description: Crea un nuevo item en una coleccion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemInDTO'
+            examples:
+              itemBasico:
+                summary: Item basico
+                value:
+                  idColeccion: 1
+                  nombre: RM - Map of the Soul 7 Photocard
+                  descripcion: Photocard oficial de RM del album MOTS:7
+                  imagenUrl: ejemplo/rm-photocard.jpg
+                  tipo: Photocard
+                  rareza: RARO
+                  anioLanzamiento: 2020
+              itemCompleto:
+                summary: Item legendario completo
+                value:
+                  idColeccion: 2
+                  nombre: Charizard Holo Primera Edicion
+                  descripcion: Carta holografica de Charizard del set base, primera edicion
+                  imagenUrl: ejemplo/charizard-1st.jpg
+                  tipo: Trading Card
+                  rareza: LEGENDARIO
+                  anioLanzamiento: 1999
+      responses:
+        '201':
+          description: Item creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemOutDTO'
+              examples:
+                itemCreado:
+                  summary: Item recien creado
+                  value:
+                    id: 3
+                    idColeccion: 1
+                    nombreColeccion: BTS Love Yourself Collection
+                    nombre: RM - Map of the Soul 7 Photocard
+                    descripcion: Photocard oficial de RM del album MOTS:7
+                    imagenUrl: ejemplo/rm-photocard.jpg
+                    tipo: Photocard
+                    rareza: RARO
+                    anioLanzamiento: 2020
+                itemLegendarioCreado:
+                  summary: Item legendario creado
+                  value:
+                    id: 4
+                    idColeccion: 2
+                    nombreColeccion: Pokemon Primera Generacion
+                    nombre: Charizard Holo Primera Edicion
+                    descripcion: Carta holografica de Charizard del set base, primera edicion
+                    imagenUrl: ejemplo/charizard-1st.jpg
+                    tipo: Trading Card
+                    rareza: LEGENDARIO
+                    anioLanzamiento: 1999
+        '400':
+          description: Datos de entrada invalidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 400
+                message: Errores de validacion
+                errors:
+                  nombre: El nombre no puede estar en blanco
+                  tipo: El tipo es obligatorio
+                  idColeccion: La coleccion es obligatoria
+        '404':
+          description: Coleccion no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message: Coleccion con id 999 no encontrada
+                errors: { }
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: { }
+
+    get:
+      tags:
+        - Items
+      summary: Listar items con filtros opcionales
+      description: Obtiene una lista de items. Se pueden aplicar filtros por nombre, tipo, rareza o ID de coleccion.
+      parameters:
+        - name: nombre
+          in: query
+          description: Filtrar por nombre (busqueda parcial)
+          required: false
+          schema:
+            type: string
+          example: RM
+        - name: tipo
+          in: query
+          description: Filtrar por tipo de item
+          required: false
+          schema:
+            type: string
+          example: Photocard
+        - name: rareza
+          in: query
+          description: Filtrar por rareza
+          required: false
+          schema:
+            $ref: '#/components/schemas/RarezaItem'
+        - name: idColeccion
+          in: query
+          description: Filtrar por ID de coleccion
+          required: false
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: Lista de items obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ItemOutDTO'
+              examples:
+                listaItems:
+                  summary: Lista con dos items
+                  value:
+                    - id: 1
+                      idColeccion: 1
+                      nombreColeccion: BTS Love Yourself Collection
+                      nombre: RM - Map of the Soul 7 Photocard
+                      descripcion: Photocard oficial de RM del album MOTS:7
+                      imagenUrl: ejemplo/rm-photocard.jpg
+                      tipo: Photocard
+                      rareza: RARO
+                      anioLanzamiento: 2020
+                    - id: 2
+                      idColeccion: 2
+                      nombreColeccion: Pokemon Primera Generacion
+                      nombre: Charizard Holo Primera Edicion
+                      descripcion: Carta holografica de Charizard del set base
+                      imagenUrl: ejemplo/charizard.jpg
+                      tipo: Trading Card
+                      rareza: LEGENDARIO
+                      anioLanzamiento: 1999
+                listaVacia:
+                  summary: Sin items encontrados
+                  value: []
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+
+  /items/{id}:
+    get:
+      tags:
+        - Items
+      summary: Obtener un item por ID
+      description: Recupera la informacion de un item especifico
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del item
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: Item encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemOutDTO'
+              examples:
+                itemEncontrado:
+                  summary: Item existente
+                  value:
+                    id: 1
+                    idColeccion: 1
+                    nombreColeccion: BTS Love Yourself Collection
+                    nombre: RM - Map of the Soul 7 Photocard
+                    descripcion: Photocard oficial de RM del album MOTS:7
+                    imagenUrl: ejemplo/rm-photocard.jpg
+                    tipo: Photocard
+                    rareza: RARO
+                    anioLanzamiento: 2020
+                itemLegendario:
+                  summary: Item legendario
+                  value:
+                    id: 2
+                    idColeccion: 2
+                    nombreColeccion: Pokemon Primera Generacion
+                    nombre: Charizard Holo Primera Edicion
+                    descripcion: Carta holografica de Charizard del set base
+                    imagenUrl: ejemplo/charizard.jpg
+                    tipo: Trading Card
+                    rareza: LEGENDARIO
+                    anioLanzamiento: 1999
+        '404':
+          description: Item no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message: Item con id 999 no encontrado
+                errors: {}
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+
+    put:
+      tags:
+        - Items
+      summary: Actualizar un item
+      description: Actualiza la informacion de un item existente
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del item
+          schema:
+            type: integer
+            format: int64
+          example: 2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemPutDTO'
+            examples:
+              actualizacionBasica:
+                summary: Actualizacion basica
+                value:
+                  nombre: RM - MOTS 7 Edition Updated
+                  descripcion: Descripcion actualizada
+                  imagenUrl: ejemplo/rm-updated.jpg
+                  tipo: Photocard
+                  rareza: EPICO
+                  anioLanzamiento: 2021
+              cambioRareza:
+                summary: Cambio de rareza
+                value:
+                  nombre: Charizard Holo - Edicion Especial
+                  descripcion: Version especial con marco diferente
+                  imagenUrl: ejemplo/charizard-special.jpg
+                  tipo: Trading Card
+                  rareza: LEGENDARIO
+                  anioLanzamiento: 2000
+      responses:
+        '200':
+          description: Item actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemOutDTO'
+              examples:
+                itemActualizado:
+                  summary: Item actualizado
+                  value:
+                    id: 2
+                    idColeccion: 1
+                    nombreColeccion: BTS Love Yourself Collection
+                    nombre: RM - MOTS 7 Edition Updated
+                    descripcion: Descripcion actualizada
+                    imagenUrl: ejemplo/rm-updated.jpg
+                    tipo: Photocard
+                    rareza: EPICO
+                    anioLanzamiento: 2021
+        '400':
+          description: Datos de entrada invalidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 400
+                message: Errores de validacion
+                errors:
+                  nombre: El nombre no puede estar en blanco
+                  tipo: El tipo es obligatorio
+        '404':
+          description: Item no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message: Item con id 999 no encontrado
+                errors: {}
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+
+    delete:
+      tags:
+        - Items
+      summary: Eliminar un item
+      description: Elimina un item del sistema
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del item
+          schema:
+            type: integer
+            format: int64
+          example: 3
+      responses:
+        '204':
+          description: Item eliminado exitosamente
+        '404':
+          description: Item no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message: Item con id 999 no encontrado
+                errors: {}
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+
+  /items/{id}/rareza:
+    patch:
+      tags:
+        - Items
+      summary: Actualizar rareza de item
+      description: Cambia unicamente la rareza de un item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del item
+          schema:
+            type: integer
+            format: int64
+          example: 2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemRarezaDTO'
+            examples:
+              rarezaComun:
+                summary: Cambiar a comun
+                value:
+                  rareza: COMUN
+              rarezaLegendaria:
+                summary: Cambiar a legendario
+                value:
+                  rareza: LEGENDARIO
+      responses:
+        '200':
+          description: Rareza actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemOutDTO'
+              examples:
+                rarezaActualizadaComun:
+                  summary: Item ahora comun
+                  value:
+                    id: 2
+                    idColeccion: 1
+                    nombreColeccion: BTS Love Yourself Collection
+                    nombre: RM - Map of the Soul 7 Photocard
+                    descripcion: Photocard oficial de RM del album MOTS:7
+                    imagenUrl: ejemplo/rm-photocard.jpg
+                    tipo: Photocard
+                    rareza: COMUN
+                    anioLanzamiento: 2020
+                rarezaActualizadaLegendaria:
+                  summary: Item ahora legendario
+                  value:
+                    id: 2
+                    idColeccion: 2
+                    nombreColeccion: Pokemon Primera Generacion
+                    nombre: Charizard Holo Primera Edicion
+                    descripcion: Carta holografica de Charizard del set base
+                    imagenUrl: ejemplo/charizard.jpg
+                    tipo: Trading Card
+                    rareza: LEGENDARIO
+                    anioLanzamiento: 1999
+        '400':
+          description: Rareza invalida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 400
+                message: Errores de validacion
+                errors:
+                  rareza: La rareza no puede ser nula
+        '404':
+          description: Item no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message: Item con id 999 no encontrado
+                errors: {}
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+  # USUARIO-COLECCIONES
+  /usuario-colecciones:
+    post:
+      tags:
+        - Usuario-Colecciones
+      summary: Crear relacion usuario-coleccion
+      description: Asocia un usuario con una coleccion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioColeccionInDTO'
+            examples:
+              relacionBasica:
+                summary: Relacion basica
+                value:
+                  idUsuario: 1
+                  idColeccion: 2
+                  esFavorita: true
+                  esCreador: false
+              relacionCreador:
+                summary: Usuario es creador
+                value:
+                  idUsuario: 2
+                  idColeccion: 3
+                  esFavorita: true
+                  esCreador: true
+      responses:
+        '201':
+          description: Relacion creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioColeccionOutDTO'
+              examples:
+                relacionCreada:
+                  summary: Relacion recien creada
+                  value:
+                    id: 3
+                    idUsuario: 1
+                    idColeccion: 2
+                    esFavorita: true
+                    esCreador: false
+                    fechaAgregada: "2025-12-13T17:30:00"
+                relacionCreadorCreada:
+                  summary: Relacion creador creada
+                  value:
+                    id: 4
+                    idUsuario: 2
+                    idColeccion: 3
+                    esFavorita: true
+                    esCreador: true
+                    fechaAgregada: "2025-12-13T18:00:00"
+        '400':
+          description: Datos invalidos o relacion ya existe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              examples:
+                validacionError:
+                  summary: Errores de validacion
+                  value:
+                    statusCode: 400
+                    message: Errores de validacion
+                    errors:
+                      idUsuario: El ID del usuario es obligatorio
+                      idColeccion: El ID de la coleccion es obligatorio
+                relacionDuplicada:
+                  summary: Relacion ya existe
+                  value:
+                    statusCode: 400
+                    message: La relacion ya existe
+                    errors: { }
+        '404':
+          description: Usuario o coleccion no encontrados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              examples:
+                usuarioNoEncontrado:
+                  summary: Usuario no existe
+                  value:
+                    statusCode: 404
+                    message: Usuario con id 999 no encontrado
+                    errors: { }
+                coleccionNoEncontrada:
+                  summary: Coleccion no existe
+                  value:
+                    statusCode: 404
+                    message: Coleccion con id 999 no encontrada
+                    errors: { }
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: { }
+
+    get:
+      tags:
+        - Usuario-Colecciones
+      summary: Listar relaciones usuario-coleccion con filtros opcionales
+      description: Obtiene lista de relaciones entre usuarios y colecciones. Se pueden aplicar filtros.
+      parameters:
+        - name: idUsuario
+          in: query
+          description: Filtrar por ID de usuario
+          required: false
+          schema:
+            type: integer
+            format: int64
+          example: 1
+        - name: idColeccion
+          in: query
+          description: Filtrar por ID de coleccion
+          required: false
+          schema:
+            type: integer
+            format: int64
+          example: 2
+        - name: soloFavoritas
+          in: query
+          description: Filtrar solo colecciones favoritas
+          required: false
+          schema:
+            type: boolean
+          example: true
+      responses:
+        '200':
+          description: Lista de relaciones obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UsuarioColeccionOutDTO'
+              examples:
+                listaRelaciones:
+                  summary: Lista con dos relaciones
+                  value:
+                    - id: 1
+                      idUsuario: 1
+                      idColeccion: 1
+                      esFavorita: true
+                      esCreador: true
+                      fechaAgregada: "2025-12-03T13:15:00"
+                    - id: 2
+                      idUsuario: 1
+                      idColeccion: 2
+                      esFavorita: false
+                      esCreador: false
+                      fechaAgregada: "2025-12-05T14:20:00"
+                soloFavoritas:
+                  summary: Solo colecciones favoritas
+                  value:
+                    - id: 1
+                      idUsuario: 1
+                      idColeccion: 1
+                      esFavorita: true
+                      esCreador: true
+                      fechaAgregada: "2025-12-03T13:15:00"
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+
+  /usuario-colecciones/{id}:
+    get:
+      tags:
+        - Usuario-Colecciones
+      summary: Obtener relacion usuario-coleccion por ID
+      description: Recupera una relacion especifica
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la relacion
+          schema:
+            type: integer
+            format: int64
+          example: 3
+      responses:
+        '200':
+          description: Relacion encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioColeccionOutDTO'
+              examples:
+                relacionEncontrada:
+                  summary: Relacion existente
+                  value:
+                    id: 3
+                    idUsuario: 1
+                    idColeccion: 2
+                    esFavorita: true
+                    esCreador: false
+                    fechaAgregada: "2025-12-05T14:20:00"
+                relacionCreador:
+                  summary: Relacion de creador
+                  value:
+                    id: 1
+                    idUsuario: 1
+                    idColeccion: 1
+                    esFavorita: true
+                    esCreador: true
+                    fechaAgregada: "2025-12-03T13:15:00"
+        '404':
+          description: Relacion no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message:Usuario-coleccion con ID: 999 no encontrado
+                errors: {}
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+
+    put:
+      tags:
+        - Usuario-Colecciones
+      summary: Actualizar relacion usuario-coleccion
+      description: Actualiza una relacion existente
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la relacion
+          schema:
+            type: integer
+            format: int64
+          example: 2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioColeccionPutDTO'
+            examples:
+              marcarFavorita:
+                summary: Marcar como favorita
+                value:
+                  esFavorita: true
+                  esCreador: false
+              cambiarCreador:
+                summary: Cambiar estado de creador
+                value:
+                  esFavorita: true
+                  esCreador: true
+      responses:
+        '200':
+          description: Relacion actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioColeccionOutDTO'
+              examples:
+                relacionActualizada:
+                  summary: Relacion actualizada
+                  value:
+                    id: 2
+                    idUsuario: 1
+                    idColeccion: 2
+                    esFavorita: true
+                    esCreador: false
+                    fechaAgregada: "2025-12-05T14:20:00"
+        '404':
+          description: Relacion no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message:Usuario-coleccion con ID: 999 no encontrado
+                errors: {}
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+
+    delete:
+      tags:
+        - Usuario-Colecciones
+      summary: Eliminar relacion usuario-coleccion
+      description: Elimina una relacion entre usuario y coleccion
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la relacion
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '204':
+          description: Relacion eliminada exitosamente
+        '404':
+          description: Relacion no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message:Usuario-coleccion con ID: 999 no encontrado
+                errors: {}
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+
+  /usuario-colecciones/{id}/favorita:
+    patch:
+      tags:
+        - Usuario-Colecciones
+      summary: Actualizar estado de favorita
+      description: Cambia si una coleccion es favorita para el usuario
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la relacion
+          schema:
+            type: integer
+            format: int64
+          example: 2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioColeccionFavoritaDTO'
+            examples:
+              marcarFavorita:
+                summary: Marcar como favorita
+                value:
+                  esFavorita: true
+              desmarcarFavorita:
+                summary: Desmarcar como favorita
+                value:
+                  esFavorita: false
+      responses:
+        '200':
+          description: Estado de favorita actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioColeccionOutDTO'
+              examples:
+                ahoraFavorita:
+                  summary: Coleccion ahora favorita
+                  value:
+                    id: 2
+                    idUsuario: 1
+                    idColeccion: 2
+                    esFavorita: true
+                    esCreador: false
+                    fechaAgregada: "2025-12-05T14:20:00"
+                yaNoFavorita:
+                  summary: Coleccion ya no favorita
+                  value:
+                    id: 2
+                    idUsuario: 1
+                    idColeccion: 2
+                    esFavorita: false
+                    esCreador: false
+                    fechaAgregada: "2025-12-05T14:20:00"
+        '400':
+          description: Valor invalido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 400
+                message: Errores de validacion
+                errors:
+                  esFavorita: Favorita no puede ser nulo
+        '404':
+          description: Relacion no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message:Usuario-coleccion con ID: 999 no encontrado
+                errors: {}
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+  # USUARIO-ITEMS
+  /usuario-items:
+    post:
+      tags:
+        - Usuario-Items
+      summary: Crear relacion usuario-item
+      description: Registra que un usuario tiene, busca o intercambia un item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioItemInDTO'
+            examples:
+              itemQueTengo:
+                summary: Item que tengo
+                value:
+                  idUsuario: 1
+                  idItem: 5
+                  idColeccion: 1
+                  estado: TENGO
+                  cantidad: 2
+                  notas: En perfecto estado, con sobre original
+                  esVisible: true
+              itemQueBusco:
+                summary: Item que busco
+                value:
+                  idUsuario: 1
+                  idItem: 8
+                  idColeccion: 2
+                  estado: BUSCO
+                  cantidad: 0
+                  notas: Dispuesto a intercambiar o comprar
+                  esVisible: true
+      responses:
+        '201':
+          description: Relacion creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioItemOutDTO'
+              examples:
+                relacionCreada:
+                  summary: Item registrado que tengo
+                  value:
+                    id: 7
+                    idUsuario: 1
+                    nombreUsuario: Nerea Test
+                    idColeccion: 1
+                    nombreColeccion: BTS Love Yourself Collection
+                    idItem: 5
+                    nombreItem: RM - Map of the Soul 7 Photocard
+                    estado: TENGO
+                    cantidad: 2
+                    notas: En perfecto estado, con sobre original
+                    esVisible: true
+                    fechaRegistro: "2025-12-13T18:30:00"
+                itemBuscoCreado:
+                  summary: Item registrado que busco
+                  value:
+                    id: 8
+                    idUsuario: 1
+                    nombreUsuario: Nerea Test
+                    idColeccion: 2
+                    nombreColeccion: Pokemon Primera Generacion
+                    idItem: 8
+                    nombreItem: Charizard Holo Primera Edicion
+                    estado: BUSCO
+                    cantidad: 0
+                    notas: Dispuesto a intercambiar o comprar
+                    esVisible: true
+                    fechaRegistro: "2025-12-13T19:00:00"
+        '400':
+          description: Datos invalidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              examples:
+                validacionError:
+                  summary: Errores de validacion
+                  value:
+                    statusCode: 400
+                    message: Errores de validacion
+                    errors:
+                      idUsuario: El ID del usuario es obligatorio
+                      idItem: El ID del item es obligatorio
+                      idColeccion: El ID de la coleccion es obligatorio
+                      cantidad: La cantidad no puede ser negativa
+        '404':
+          description: Usuario, item o coleccion no encontrados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              examples:
+                usuarioNoEncontrado:
+                  summary: Usuario no existe
+                  value:
+                    statusCode: 404
+                    message: Usuario con id 999 no encontrado
+                    errors: { }
+                itemNoEncontrado:
+                  summary: Item no existe
+                  value:
+                    statusCode: 404
+                    message: Item con id 999 no encontrado
+                    errors: { }
+                coleccionNoEncontrada:
+                  summary: Coleccion no existe
+                  value:
+                    statusCode: 404
+                    message: Coleccion con id 999 no encontrada
+                    errors: { }
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: { }
+
+    get:
+      tags:
+        - Usuario-Items
+      summary: Listar relaciones usuario-item con filtros opcionales
+      description: Obtiene lista de items que los usuarios tienen, buscan o intercambian.
+      parameters:
+        - name: idUsuario
+          in: query
+          description: Filtrar por ID de usuario
+          required: false
+          schema:
+            type: integer
+            format: int64
+          example: 1
+        - name: idItem
+          in: query
+          description: Filtrar por ID de item
+          required: false
+          schema:
+            type: integer
+            format: int64
+          example: 5
+        - name: idColeccion
+          in: query
+          description: Filtrar por ID de coleccion
+          required: false
+          schema:
+            type: integer
+            format: int64
+          example: 1
+        - name: estado
+          in: query
+          description: Filtrar por estado del item
+          required: false
+          schema:
+            $ref: '#/components/schemas/EstadoItem'
+        - name: esVisible
+          in: query
+          description: Filtrar por visibilidad
+          required: false
+          schema:
+            type: boolean
+          example: true
+      responses:
+        '200':
+          description: Lista de relaciones obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UsuarioItemOutDTO'
+              examples:
+                listaRelaciones:
+                  summary: Lista con dos relaciones
+                  value:
+                    - id: 1
+                      idUsuario: 1
+                      nombreUsuario: Nerea Test
+                      idColeccion: 1
+                      nombreColeccion: BTS Love Yourself Collection
+                      idItem: 5
+                      nombreItem: RM - Map of the Soul 7 Photocard
+                      estado: TENGO
+                      cantidad: 2
+                      notas: En perfecto estado, con sobre original
+                      esVisible: true
+                      fechaRegistro: "2025-12-06T09:15:00"
+                    - id: 2
+                      idUsuario: 1
+                      nombreUsuario: Nerea Test
+                      idColeccion: 2
+                      nombreColeccion: Pokemon Primera Generacion
+                      idItem: 8
+                      nombreItem: Charizard Holo Primera Edicion
+                      estado: BUSCO
+                      cantidad: 0
+                      notas: Dispuesto a intercambiar o comprar
+                      esVisible: true
+                      fechaRegistro: "2025-12-07T14:30:00"
+                itemsQueTengo:
+                  summary: Items que tengo
+                  value:
+                    - id: 1
+                      idUsuario: 1
+                      nombreUsuario: Nerea Test
+                      idColeccion: 1
+                      nombreColeccion: BTS Love Yourself Collection
+                      idItem: 5
+                      nombreItem: RM - Map of the Soul 7 Photocard
+                      estado: TENGO
+                      cantidad: 2
+                      notas: En perfecto estado
+                      esVisible: true
+                      fechaRegistro: "2025-12-06T09:15:00"
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+
+  /usuario-items/{id}:
+    get:
+      tags:
+        - Usuario-Items
+      summary: Obtener relacion usuario-item por ID
+      description: Recupera una relacion especifica
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la relacion
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: Relacion encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioItemOutDTO'
+              examples:
+                relacionEncontrada:
+                  summary: Relacion existente
+                  value:
+                    id: 1
+                    idUsuario: 1
+                    nombreUsuario: Nerea Test
+                    idColeccion: 1
+                    nombreColeccion: BTS Love Yourself Collection
+                    idItem: 5
+                    nombreItem: RM - Map of the Soul 7 Photocard
+                    estado: TENGO
+                    cantidad: 2
+                    notas: En perfecto estado, con sobre original
+                    esVisible: true
+                    fechaRegistro: "2025-12-06T09:15:00"
+                itemEnCamino:
+                  summary: Item en camino
+                  value:
+                    id: 5
+                    idUsuario: 2
+                    nombreUsuario: Juan Test
+                    idColeccion: 2
+                    nombreColeccion: Pokemon Primera Generacion
+                    idItem: 10
+                    nombreItem: Blastoise Holo
+                    estado: EN_CAMINO
+                    cantidad: 1
+                    notas: Llega en 3 dias desde Japon
+                    esVisible: true
+                    fechaRegistro: "2025-12-10T11:00:00"
+        '404':
+          description: Relacion no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message: Usuario-Item con id 999 no encontrado
+                errors: {}
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+
+    put:
+      tags:
+        - Usuario-Items
+      summary: Actualizar relacion usuario-item
+      description: Actualiza estado, cantidad, notas o visibilidad
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la relacion
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioItemPutDTO'
+            examples:
+              actualizarEstado:
+                summary: Cambiar estado a intercambio
+                value:
+                  estado: DROPEO
+                  esVisible: true
+                  notas: Disponible para intercambio
+                  cantidad: 1
+              ocultarItem:
+                summary: Ocultar item y actualizar cantidad
+                value:
+                  estado: TENGO
+                  esVisible: false
+                  notas: Reservado para intercambio pendiente
+                  cantidad: 3
+      responses:
+        '200':
+          description: Relacion actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioItemOutDTO'
+              examples:
+                relacionActualizada:
+                  summary: Relacion actualizada
+                  value:
+                    id: 1
+                    idUsuario: 1
+                    nombreUsuario: Nerea Test
+                    idColeccion: 1
+                    nombreColeccion: BTS Love Yourself Collection
+                    idItem: 5
+                    nombreItem: RM - Map of the Soul 7 Photocard
+                    estado: DROPEO
+                    cantidad: 1
+                    notas: Disponible para intercambio
+                    esVisible: true
+                    fechaRegistro: "2025-12-06T09:15:00"
+        '400':
+          description: Datos invalidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 400
+                message: Errores de validacion
+                errors:
+                  cantidad: La cantidad no puede ser negativa
+        '404':
+          description: Relacion no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message: Usuario-Item con id 999 no encontrado
+                errors: {}
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+
+    delete:
+      tags:
+        - Usuario-Items
+      summary: Eliminar relacion usuario-item
+      description: Elimina el registro de un item del usuario
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la relacion
+          schema:
+            type: integer
+            format: int64
+          example: 6
+      responses:
+        '204':
+          description: Relacion eliminada exitosamente
+        '404':
+          description: Relacion no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message: Usuario-Item con id 999 no encontrado
+                errors: {}
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
+
+  /usuario-items/{id}/visible:
+    patch:
+      tags:
+        - Usuario-Items
+      summary: Actualizar visibilidad de item
+      description: Cambia si un item es visible para otros usuarios
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la relacion
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioItemVisibleDTO'
+            examples:
+              hacerVisible:
+                summary: Hacer item visible
+                value:
+                  esVisible: true
+              ocultarItem:
+                summary: Ocultar item
+                value:
+                  esVisible: false
+      responses:
+        '200':
+          description: Visibilidad actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioItemOutDTO'
+              examples:
+                itemVisible:
+                  summary: Item ahora visible
+                  value:
+                    id: 1
+                    idUsuario: 1
+                    nombreUsuario: Nerea Test
+                    idColeccion: 1
+                    nombreColeccion: BTS Love Yourself Collection
+                    idItem: 5
+                    nombreItem: RM - Map of the Soul 7 Photocard
+                    estado: TENGO
+                    cantidad: 2
+                    notas: En perfecto estado, con sobre original
+                    esVisible: true
+                    fechaRegistro: "2025-12-06T09:15:00"
+                itemOculto:
+                  summary: Item ahora oculto
+                  value:
+                    id: 1
+                    idUsuario: 1
+                    nombreUsuario: Nerea Test
+                    idColeccion: 1
+                    nombreColeccion: BTS Love Yourself Collection
+                    idItem: 5
+                    nombreItem: RM - Map of the Soul 7 Photocard
+                    estado: TENGO
+                    cantidad: 2
+                    notas: Reservado para intercambio
+                    esVisible: false
+                    fechaRegistro: "2025-12-06T09:15:00"
+        '400':
+          description: Valor invalido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 400
+                message: Errores de validacion
+                errors:
+                  esVisible: El campo esVisible no puede ser nulo
+        '404':
+          description: Relacion no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message: Usuario-Item con id 999 no encontrado
+                errors: {}
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: {}
