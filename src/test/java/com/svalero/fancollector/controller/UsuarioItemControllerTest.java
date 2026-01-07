@@ -1,0 +1,302 @@
+package com.svalero.fancollector.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.svalero.fancollector.domain.enums.EstadoItem;
+import com.svalero.fancollector.dto.UsuarioItemInDTO;
+import com.svalero.fancollector.dto.UsuarioItemOutDTO;
+import com.svalero.fancollector.dto.UsuarioItemPutDTO;
+import com.svalero.fancollector.dto.patches.UsuarioItemVisibleDTO;
+import com.svalero.fancollector.exception.domain.ColeccionNoEncontradaException;
+import com.svalero.fancollector.exception.domain.ItemNoEncontradoException;
+import com.svalero.fancollector.exception.domain.UsuarioItemNoEncontradoException;
+import com.svalero.fancollector.exception.domain.UsuarioNoEncontradoException;
+import com.svalero.fancollector.service.UsuarioItemService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(UsuarioItemController.class)
+public class UsuarioItemControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private UsuarioItemService usuarioItemService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    public void testListarUsuarioItems() throws Exception {
+        UsuarioItemOutDTO ui1 = new UsuarioItemOutDTO();
+        ui1.setId(1L);
+        ui1.setIdUsuario(1L);
+        ui1.setNombreUsuario("Nerea");
+        ui1.setIdItem(1L);
+        ui1.setNombreItem("Darkrai");
+        ui1.setEstado(EstadoItem.TENGO);
+        ui1.setCantidad(2);
+        ui1.setEsVisible(true);
+        ui1.setFechaRegistro(LocalDateTime.now());
+
+        UsuarioItemOutDTO ui2 = new UsuarioItemOutDTO();
+        ui2.setId(2L);
+        ui2.setIdUsuario(1L);
+        ui2.setNombreUsuario("Nerea");
+        ui2.setIdItem(2L);
+        ui2.setNombreItem("Pikachu");
+        ui2.setEstado(EstadoItem.BUSCO);
+        ui2.setCantidad(0);
+        ui2.setEsVisible(true);
+        ui2.setFechaRegistro(LocalDateTime.now());
+
+        List<UsuarioItemOutDTO> lista = List.of(ui1, ui2);
+
+        when(usuarioItemService.listar(null, null, null, null, null)).thenReturn(lista);
+
+        mockMvc.perform(get("/usuario-items")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1L))
+                .andExpect(jsonPath("$[0].estado").value("TENGO"))
+                .andExpect(jsonPath("$[1].id").value(2L));
+    }
+
+    @Test
+    public void testBuscarUsuarioItemPorIdExistente() throws Exception {
+        UsuarioItemOutDTO dto = new UsuarioItemOutDTO();
+        dto.setId(1L);
+        dto.setIdUsuario(1L);
+        dto.setNombreUsuario("Nerea");
+        dto.setIdItem(1L);
+        dto.setNombreItem("Darkrai");
+        dto.setEstado(EstadoItem.TENGO);
+        dto.setCantidad(2);
+        dto.setEsVisible(true);
+
+        when(usuarioItemService.buscarPorId(1L)).thenReturn(dto);
+
+        mockMvc.perform(get("/usuario-items/1")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.estado").value("TENGO"))
+                .andExpect(jsonPath("$.cantidad").value(2));
+    }
+
+    @Test
+    public void testBuscarUsuarioItemPorIdNoExiste() throws Exception {
+        when(usuarioItemService.buscarPorId(999L))
+                .thenThrow(new UsuarioItemNoEncontradoException(999L));
+
+        mockMvc.perform(get("/usuario-items/999")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void testCrearUsuarioItemDatosValidos() throws Exception {
+        UsuarioItemInDTO inDTO = new UsuarioItemInDTO();
+        inDTO.setIdUsuario(1L);
+        inDTO.setIdItem(1L);
+        inDTO.setIdColeccion(1L);
+        inDTO.setEstado(EstadoItem.TENGO);
+        inDTO.setCantidad(2);
+        inDTO.setEsVisible(true);
+
+        UsuarioItemOutDTO outDTO = new UsuarioItemOutDTO();
+        outDTO.setId(1L);
+        outDTO.setIdUsuario(1L);
+        outDTO.setIdItem(1L);
+        outDTO.setIdColeccion(1L);
+        outDTO.setEstado(EstadoItem.TENGO);
+        outDTO.setCantidad(2);
+
+        when(usuarioItemService.crear(any(UsuarioItemInDTO.class))).thenReturn(outDTO);
+
+        mockMvc.perform(post("/usuario-items")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(inDTO))
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.estado").value("TENGO"))
+                .andExpect(jsonPath("$.cantidad").value(2));
+    }
+
+    @Test
+    public void testCrearUsuarioItemBodyInvalido() throws Exception {
+        mockMvc.perform(post("/usuario-items")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void testCrearUsuarioItemUsuarioNoExiste() throws Exception {
+        UsuarioItemInDTO inDTO = new UsuarioItemInDTO();
+        inDTO.setIdUsuario(999L);
+        inDTO.setIdItem(1L);
+        inDTO.setIdColeccion(1L);
+
+        when(usuarioItemService.crear(any(UsuarioItemInDTO.class)))
+                .thenThrow(new UsuarioNoEncontradoException(999L));
+
+        mockMvc.perform(post("/usuario-items")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(inDTO)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void testCrearUsuarioItemItemNoExiste() throws Exception {
+        UsuarioItemInDTO inDTO = new UsuarioItemInDTO();
+        inDTO.setIdUsuario(1L);
+        inDTO.setIdItem(999L);
+        inDTO.setIdColeccion(1L);
+
+        when(usuarioItemService.crear(any(UsuarioItemInDTO.class)))
+                .thenThrow(new ItemNoEncontradoException(999L));
+
+        mockMvc.perform(post("/usuario-items")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(inDTO)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void testCrearUsuarioItemColeccionNoExiste() throws Exception {
+        UsuarioItemInDTO inDTO = new UsuarioItemInDTO();
+        inDTO.setIdUsuario(1L);
+        inDTO.setIdItem(1L);
+        inDTO.setIdColeccion(999L);
+
+        when(usuarioItemService.crear(any(UsuarioItemInDTO.class)))
+                .thenThrow(new ColeccionNoEncontradaException(999L));
+
+        mockMvc.perform(post("/usuario-items")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(inDTO)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void testModificarUsuarioItemExistente() throws Exception {
+        UsuarioItemPutDTO putDTO = new UsuarioItemPutDTO();
+        putDTO.setEstado(EstadoItem.EN_CAMINO);
+        putDTO.setCantidad(3);
+        putDTO.setEsVisible(false);
+
+        UsuarioItemOutDTO outDTO = new UsuarioItemOutDTO();
+        outDTO.setId(1L);
+        outDTO.setEstado(EstadoItem.EN_CAMINO);
+        outDTO.setCantidad(3);
+        outDTO.setEsVisible(false);
+
+        when(usuarioItemService.actualizarCompleto(eq(1L), any(UsuarioItemPutDTO.class)))
+                .thenReturn(outDTO);
+
+        mockMvc.perform(put("/usuario-items/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(putDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estado").value("EN_CAMINO"))
+                .andExpect(jsonPath("$.cantidad").value(3))
+                .andExpect(jsonPath("$.esVisible").value(false));
+    }
+
+    @Test
+    public void testModificarUsuarioItemNoExiste() throws Exception {
+        UsuarioItemPutDTO putDTO = new UsuarioItemPutDTO();
+        putDTO.setEstado(EstadoItem.TENGO);
+
+        when(usuarioItemService.actualizarCompleto(eq(1L), any(UsuarioItemPutDTO.class)))
+                .thenThrow(new UsuarioItemNoEncontradoException(1L));
+
+        mockMvc.perform(put("/usuario-items/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(putDTO)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void testModificarUsuarioItemJsonNoParseable() throws Exception {
+        mockMvc.perform(put("/usuario-items/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"cantidad\": \"no es un número\"}"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.statusCode").value(500));
+    }
+
+    @Test
+    public void testActualizarVisibilidadUsuarioItem() throws Exception {
+        UsuarioItemVisibleDTO visibleDTO = new UsuarioItemVisibleDTO();
+        visibleDTO.setEsVisible(false);
+
+        UsuarioItemOutDTO outDTO = new UsuarioItemOutDTO();
+        outDTO.setId(1L);
+        outDTO.setEsVisible(false);
+
+        when(usuarioItemService.actualizarVisibilidad(eq(1L), eq(false)))
+                .thenReturn(outDTO);
+
+        mockMvc.perform(patch("/usuario-items/1/visible")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(visibleDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.esVisible").value(false));
+    }
+
+    @Test
+    public void testActualizarVisibilidadUsuarioItemNoExiste() throws Exception {
+        UsuarioItemVisibleDTO visibleDTO = new UsuarioItemVisibleDTO();
+        visibleDTO.setEsVisible(false);
+
+        when(usuarioItemService.actualizarVisibilidad(eq(999L), eq(false)))
+                .thenThrow(new UsuarioItemNoEncontradoException(999L));
+
+        mockMvc.perform(patch("/usuario-items/999/visible")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(visibleDTO)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void testActualizarVisibilidadBodyInvalido() throws Exception {
+        mockMvc.perform(patch("/usuario-items/1/visible")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void testEliminarUsuarioItemExistente() throws Exception {
+        mockMvc.perform(delete("/usuario-items/1"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    public void testEliminarUsuarioItemNoExiste() throws Exception {
+        doThrow(new UsuarioItemNoEncontradoException(1L))
+                .when(usuarioItemService).eliminar(1L);
+
+        mockMvc.perform(delete("/usuario-items/1"))
+                .andExpect(status().isNotFound());
+    }
+}
