@@ -13,10 +13,12 @@ public interface UsuarioColeccionRepository extends JpaRepository<UsuarioColecci
             WHERE (:idUsuario IS NULL OR uc.usuario.id = :idUsuario)
               AND (:idColeccion IS NULL OR uc.coleccion.id = :idColeccion)
               AND (:soloFavoritas IS NULL OR uc.esFavorita = :soloFavoritas)
+              AND (:esVisible IS NULL OR uc.esVisible = :esVisible)
             """)
     List<UsuarioColeccion> buscarPorFiltros(Long idUsuario,
                                             Long idColeccion,
-                                            Boolean soloFavoritas);
+                                            Boolean soloFavoritas,
+                                            Boolean esVisible);
 
     boolean existsByUsuario_IdAndColeccion_Id(Long usuarioId, Long coleccionId);
 }

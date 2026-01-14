@@ -7,6 +7,7 @@ import com.svalero.fancollector.dto.UsuarioColeccionInDTO;
 import com.svalero.fancollector.dto.UsuarioColeccionOutDTO;
 import com.svalero.fancollector.dto.UsuarioColeccionPutDTO;
 import com.svalero.fancollector.dto.patches.UsuarioColeccionFavoritaDTO;
+import com.svalero.fancollector.dto.patches.UsuarioColeccionVisibleDTO;
 import com.svalero.fancollector.exception.domain.ColeccionNoEncontradaException;
 import com.svalero.fancollector.exception.domain.UsuarioColeccionNoEncontradoException;
 import com.svalero.fancollector.exception.domain.UsuarioNoEncontradoException;
@@ -66,20 +67,21 @@ public class UsuarioColeccionServiceImpl implements UsuarioColeccionService {
     }
 
     @Override
-    public List<UsuarioColeccionOutDTO> listar(Long idUsuario, Long idColeccion, Boolean soloFavoritas) {
+    public List<UsuarioColeccionOutDTO> listar(Long idUsuario, Long idColeccion, Boolean soloFavoritas, Boolean esVisible) {
 
         boolean noHayFiltros = true;
 
         if (idUsuario != null) noHayFiltros = false;
         if (idColeccion != null) noHayFiltros = false;
         if (soloFavoritas != null) noHayFiltros = false;
+        if (esVisible != null) noHayFiltros = false;
 
         List<UsuarioColeccion> relaciones;
 
         if (noHayFiltros) {
             relaciones = usuarioColeccionRepository.findAll();
         } else {
-            relaciones = usuarioColeccionRepository.buscarPorFiltros(idUsuario, idColeccion, soloFavoritas);
+            relaciones = usuarioColeccionRepository.buscarPorFiltros(idUsuario, idColeccion, soloFavoritas, esVisible);
         }
 
         List<UsuarioColeccionOutDTO> resultado = new ArrayList<>();
@@ -99,6 +101,11 @@ public class UsuarioColeccionServiceImpl implements UsuarioColeccionService {
 
         if (dto.getEsCreador() != null) {
             existente.setEsCreador(dto.getEsCreador());}
+
+        if (dto.getEsVisible() != null) {
+            existente.setEsVisible(dto.getEsVisible());
+        }
+
         return modelMapper.map(usuarioColeccionRepository.save(existente),UsuarioColeccionOutDTO.class);
     }
 
@@ -110,6 +117,19 @@ public class UsuarioColeccionServiceImpl implements UsuarioColeccionService {
                 .orElseThrow(() -> new UsuarioColeccionNoEncontradoException(id));
 
         uc.setEsFavorita(dto.getEsFavorita());
+
+        usuarioColeccionRepository.save(uc);
+        return modelMapper.map(uc, UsuarioColeccionOutDTO.class);
+    }
+
+    @Override
+    public UsuarioColeccionOutDTO actualizarVisible(Long id, UsuarioColeccionVisibleDTO dto)
+            throws UsuarioColeccionNoEncontradoException {
+
+        UsuarioColeccion uc = usuarioColeccionRepository.findById(id)
+                .orElseThrow(() -> new UsuarioColeccionNoEncontradoException(id));
+
+        uc.setEsVisible(dto.getEsVisible());
 
         usuarioColeccionRepository.save(uc);
         return modelMapper.map(uc, UsuarioColeccionOutDTO.class);

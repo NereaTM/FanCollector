@@ -4,6 +4,7 @@ import com.svalero.fancollector.dto.UsuarioColeccionInDTO;
 import com.svalero.fancollector.dto.UsuarioColeccionOutDTO;
 import com.svalero.fancollector.dto.UsuarioColeccionPutDTO;
 import com.svalero.fancollector.dto.patches.UsuarioColeccionFavoritaDTO;
+import com.svalero.fancollector.dto.patches.UsuarioColeccionVisibleDTO;
 import com.svalero.fancollector.exception.domain.ColeccionNoEncontradaException;
 import com.svalero.fancollector.exception.domain.UsuarioColeccionNoEncontradoException;
 import com.svalero.fancollector.exception.domain.UsuarioNoEncontradoException;
@@ -37,9 +38,10 @@ public class UsuarioColeccionController {
     public ResponseEntity<List<UsuarioColeccionOutDTO>> listar(
             @RequestParam(required = false) Long idUsuario,
             @RequestParam(required = false) Long idColeccion,
-            @RequestParam(required = false) Boolean soloFavoritas
+            @RequestParam(required = false) Boolean soloFavoritas,
+            @RequestParam(required = false) Boolean esVisible
     ) {
-        return ResponseEntity.ok(usuarioColeccionService.listar(idUsuario, idColeccion, soloFavoritas));
+        return ResponseEntity.ok(usuarioColeccionService.listar(idUsuario, idColeccion, soloFavoritas, esVisible));
     }
 
     @GetMapping("/{id}")
@@ -62,6 +64,14 @@ public class UsuarioColeccionController {
             @Valid @RequestBody UsuarioColeccionFavoritaDTO dto
     ) throws UsuarioColeccionNoEncontradoException {
         return ResponseEntity.ok(usuarioColeccionService.actualizarFavorita(id, dto));
+    }
+
+    @PatchMapping("/{id}/visible")
+    public ResponseEntity<UsuarioColeccionOutDTO> actualizarVisible(
+            @PathVariable Long id,
+            @Valid @RequestBody UsuarioColeccionVisibleDTO dto
+    ) throws UsuarioColeccionNoEncontradoException {
+        return ResponseEntity.ok(usuarioColeccionService.actualizarVisible(id, dto));
     }
 
     @DeleteMapping("/{id}")

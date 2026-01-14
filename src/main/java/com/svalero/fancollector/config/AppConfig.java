@@ -51,6 +51,8 @@ public class AppConfig {
                             UsuarioColeccionOutDTO::setIdUsuario);
                     mapper.map(src -> src.getColeccion().getId(),
                             UsuarioColeccionOutDTO::setIdColeccion);
+                    mapper.map(UsuarioColeccion::isEsVisible,
+                            UsuarioColeccionOutDTO::setEsVisible);
                 });
 
         // UsuarioItem a UsuarioItemOutDTO (salida)
