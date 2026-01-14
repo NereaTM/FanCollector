@@ -167,6 +167,10 @@ components:
           type: boolean
           default: false
           example: false
+        esVisible:
+          type: boolean
+          default: true
+          example: true
 
     UsuarioItemInDTO:
       type: object
@@ -263,6 +267,9 @@ components:
         esCreador:
           type: boolean
           example: true
+        esVisible:
+          type: boolean
+          example: true
 
     UsuarioItemPutDTO:
       type: object
@@ -327,6 +334,15 @@ components:
           example: true
 
     UsuarioItemVisibleDTO:
+      type: object
+      required:
+        - esVisible
+      properties:
+        esVisible:
+          type: boolean
+          example: false
+
+    UsuarioColeccionVisibleDTO:
       type: object
       required:
         - esVisible
@@ -456,6 +472,9 @@ components:
         esCreador:
           type: boolean
           example: false
+        esVisible:
+          type: boolean
+          example: true
         fechaAgregada:
           type: string
           format: date-time
@@ -672,7 +691,7 @@ paths:
                       fechaRegistro: "2025-11-15T08:20:00"
                 listaVacia:
                   summary: Sin usuarios encontrados
-                  value: []
+                  value: [ ]
         '500':
           description: Error interno del servidor
           content:
@@ -682,7 +701,7 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
 
 
   /usuarios/{id}:
@@ -739,7 +758,7 @@ paths:
               example:
                 statusCode: 404
                 message: Usuario con id 999 no encontrado
-                errors: {}
+                errors: { }
         '500':
           description: Error interno del servidor
           content:
@@ -749,7 +768,7 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
 
     put:
       tags:
@@ -838,7 +857,7 @@ paths:
               example:
                 statusCode: 404
                 message: Usuario con id 999 no encontrado
-                errors: {}
+                errors: { }
         '500':
           description: Error interno del servidor
           content:
@@ -848,7 +867,7 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
 
     delete:
       tags:
@@ -876,7 +895,7 @@ paths:
               example:
                 statusCode: 404
                 message: Usuario con id 999 no encontrado
-                errors: {}
+                errors: { }
         '500':
           description: Error interno del servidor
           content:
@@ -886,7 +905,7 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
 
   /usuarios/{id}/contrasena:
     patch:
@@ -957,7 +976,7 @@ paths:
               example:
                 statusCode: 404
                 message: Usuario con id 999 no encontrado
-                errors: {}
+                errors: { }
         '500':
           description: Error interno del servidor
           content:
@@ -967,12 +986,12 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
-  # COLECCIONES
-  /colecciones:
+                errors: { }
+  # COLECCION
+  /coleccion:
     post:
       tags:
-        - Colecciones
+        - Coleccion
       summary: Crear una nueva coleccion
       description: Crea una nueva coleccion en el sistema
       requestBody:
@@ -1106,7 +1125,7 @@ paths:
           description: Filtrar por nombre del creador
           required: false
           schema:
-             type: string
+            type: string
           example: nerea
       responses:
         '200':
@@ -1143,7 +1162,7 @@ paths:
                       usableComoPlantilla: true
                 listaVacia:
                   summary: Sin colecciones encontradas
-                  value: []
+                  value: [ ]
         '500':
           description: Error interno del servidor
           content:
@@ -1153,7 +1172,7 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
 
   /colecciones/{id}:
     get:
@@ -1213,7 +1232,7 @@ paths:
               example:
                 statusCode: 404
                 message: Coleccion con id 999 no encontrada
-                errors: {}
+                errors: { }
         '500':
           description: Error interno del servidor
           content:
@@ -1223,7 +1242,7 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
 
     put:
       tags:
@@ -1306,7 +1325,7 @@ paths:
               example:
                 statusCode: 404
                 message: Coleccion con id 999 no encontrada
-                errors: {}
+                errors: { }
         '500':
           description: Error interno del servidor
           content:
@@ -1316,7 +1335,7 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
 
     delete:
       tags:
@@ -1344,7 +1363,7 @@ paths:
               example:
                 statusCode: 404
                 message: Coleccion con id 999 no encontrada
-                errors: {}
+                errors: { }
         '500':
           description: Error interno del servidor
           content:
@@ -1354,7 +1373,7 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
 
   /colecciones/{id}/publico:
     patch:
@@ -1440,7 +1459,7 @@ paths:
               example:
                 statusCode: 404
                 message: Coleccion con id 999 no encontrada
-                errors: {}
+                errors: { }
         '500':
           description: Error interno del servidor
           content:
@@ -1450,7 +1469,7 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
 
   /colecciones/{id}/plantilla:
     patch:
@@ -1536,7 +1555,7 @@ paths:
               example:
                 statusCode: 404
                 message: Coleccion con id 999 no encontrada
-                errors: {}
+                errors: { }
         '500':
           description: Error interno del servidor
           content:
@@ -1546,7 +1565,7 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
   # ITEMS
   /items:
     post:
@@ -1714,7 +1733,7 @@ paths:
                       anioLanzamiento: 1999
                 listaVacia:
                   summary: Sin items encontrados
-                  value: []
+                  value: [ ]
         '500':
           description: Error interno del servidor
           content:
@@ -1724,7 +1743,7 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
 
   /items/{id}:
     get:
@@ -1782,7 +1801,7 @@ paths:
               example:
                 statusCode: 404
                 message: Item con id 999 no encontrado
-                errors: {}
+                errors: { }
         '500':
           description: Error interno del servidor
           content:
@@ -1792,7 +1811,7 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
 
     put:
       tags:
@@ -1874,7 +1893,7 @@ paths:
               example:
                 statusCode: 404
                 message: Item con id 999 no encontrado
-                errors: {}
+                errors: { }
         '500':
           description: Error interno del servidor
           content:
@@ -1884,7 +1903,7 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
 
     delete:
       tags:
@@ -1912,7 +1931,7 @@ paths:
               example:
                 statusCode: 404
                 message: Item con id 999 no encontrado
-                errors: {}
+                errors: { }
         '500':
           description: Error interno del servidor
           content:
@@ -1922,7 +1941,7 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
 
   /items/{id}/rareza:
     patch:
@@ -2006,7 +2025,7 @@ paths:
               example:
                 statusCode: 404
                 message: Item con id 999 no encontrado
-                errors: {}
+                errors: { }
         '500':
           description: Error interno del servidor
           content:
@@ -2016,12 +2035,12 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
-  # USUARIO-COLECCIONES
-  /usuario-colecciones:
+                errors: { }
+  # USUARIO-COLECCION
+  /usuario-coleccion:
     post:
       tags:
-        - Usuario-Colecciones
+        - Usuario-Coleccion
       summary: Crear relacion usuario-coleccion
       description: Asocia un usuario con una coleccion
       requestBody:
@@ -2151,6 +2170,13 @@ paths:
           schema:
             type: boolean
           example: true
+        - name: esVisible
+          in: query
+          description: Filtrar por visibilidad
+          required: false
+          schema:
+            type: boolean
+          example: true
       responses:
         '200':
           description: Lista de relaciones obtenida exitosamente
@@ -2169,12 +2195,14 @@ paths:
                       idColeccion: 1
                       esFavorita: true
                       esCreador: true
+                      esVisible: true
                       fechaAgregada: "2025-12-03T13:15:00"
                     - id: 2
                       idUsuario: 1
                       idColeccion: 2
                       esFavorita: false
                       esCreador: false
+                      esVisible: true
                       fechaAgregada: "2025-12-05T14:20:00"
                 soloFavoritas:
                   summary: Solo colecciones favoritas
@@ -2184,6 +2212,7 @@ paths:
                       idColeccion: 1
                       esFavorita: true
                       esCreador: true
+                      esVisible: true
                       fechaAgregada: "2025-12-03T13:15:00"
         '500':
           description: Error interno del servidor
@@ -2194,7 +2223,7 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
 
   /usuario-colecciones/{id}:
     get:
@@ -2227,6 +2256,7 @@ paths:
                     idColeccion: 2
                     esFavorita: true
                     esCreador: false
+                    esVisible: true
                     fechaAgregada: "2025-12-05T14:20:00"
                 relacionCreador:
                   summary: Relacion de creador
@@ -2236,6 +2266,7 @@ paths:
                     idColeccion: 1
                     esFavorita: true
                     esCreador: true
+                    esVisible: true
                     fechaAgregada: "2025-12-03T13:15:00"
         '404':
           description: Relacion no encontrada
@@ -2246,7 +2277,7 @@ paths:
               example:
                 statusCode: 404
                 message:Usuario-coleccion con ID: 999 no encontrado
-                errors: {}
+                errors: { }
         '500':
           description: Error interno del servidor
           content:
@@ -2256,7 +2287,7 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
 
     put:
       tags:
@@ -2284,11 +2315,13 @@ paths:
                 value:
                   esFavorita: true
                   esCreador: false
+                  esVisible: true
               cambiarCreador:
                 summary: Cambiar estado de creador
                 value:
                   esFavorita: true
                   esCreador: true
+                  esVisible: true
       responses:
         '200':
           description: Relacion actualizada exitosamente
@@ -2305,6 +2338,7 @@ paths:
                     idColeccion: 2
                     esFavorita: true
                     esCreador: false
+                    esVisible: true
                     fechaAgregada: "2025-12-05T14:20:00"
         '404':
           description: Relacion no encontrada
@@ -2315,7 +2349,7 @@ paths:
               example:
                 statusCode: 404
                 message:Usuario-coleccion con ID: 999 no encontrado
-                errors: {}
+                errors: { }
         '500':
           description: Error interno del servidor
           content:
@@ -2325,7 +2359,7 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
 
     delete:
       tags:
@@ -2353,7 +2387,7 @@ paths:
               example:
                 statusCode: 404
                 message:Usuario-coleccion con ID: 999 no encontrado
-                errors: {}
+                errors: { }
         '500':
           description: Error interno del servidor
           content:
@@ -2363,7 +2397,7 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
 
   /usuario-colecciones/{id}/favorita:
     patch:
@@ -2411,6 +2445,7 @@ paths:
                     idColeccion: 2
                     esFavorita: true
                     esCreador: false
+                    esVisible: true
                     fechaAgregada: "2025-12-05T14:20:00"
                 yaNoFavorita:
                   summary: Coleccion ya no favorita
@@ -2441,7 +2476,7 @@ paths:
               example:
                 statusCode: 404
                 message:Usuario-coleccion con ID: 999 no encontrado
-                errors: {}
+                errors: { }
         '500':
           description: Error interno del servidor
           content:
@@ -2451,7 +2486,98 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
+
+  /usuario-colecciones/{id}/visible:
+    patch:
+      tags:
+        - Usuario-Colecciones
+      summary: Actualizar visibilidad de coleccion en perfil
+      description: Cambia si una coleccion agregada es visible en el perfil del usuario
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la relacion
+          schema:
+            type: integer
+            format: int64
+          example: 2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioColeccionVisibleDTO'
+            examples:
+              hacerVisible:
+                summary: Hacer coleccion visible en perfil
+                value:
+                  esVisible: true
+              ocultarColeccion:
+                summary: Ocultar coleccion del perfil
+                value:
+                  esVisible: false
+      responses:
+        '200':
+          description: Visibilidad actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioColeccionOutDTO'
+              examples:
+                coleccionVisible:
+                  summary: Coleccion ahora visible
+                  value:
+                    id: 2
+                    idUsuario: 1
+                    idColeccion: 2
+                    esFavorita: true
+                    esCreador: false
+                    esVisible: true
+                    fechaAgregada: "2025-12-05T14:20:00"
+                coleccionOculta:
+                  summary: Coleccion ahora oculta
+                  value:
+                    id: 2
+                    idUsuario: 1
+                    idColeccion: 2
+                    esFavorita: true
+                    esCreador: false
+                    esVisible: false
+                    fechaAgregada: "2025-12-05T14:20:00"
+        '400':
+          description: Valor invalido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 400
+                message: Errores de validacion
+                errors:
+                  esVisible: El campo esVisible no puede ser nulo
+        '404':
+          description: Relacion no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 404
+                message:
+                  Usuario-coleccion con ID: 999 no encontrado
+                errors: { }
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: { }
   # USUARIO-ITEMS
   /usuario-items:
     post:
@@ -2681,7 +2807,7 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
 
   /usuario-items/{id}:
     get:
@@ -2745,7 +2871,7 @@ paths:
               example:
                 statusCode: 404
                 message: Usuario-Item con id 999 no encontrado
-                errors: {}
+                errors: { }
         '500':
           description: Error interno del servidor
           content:
@@ -2755,7 +2881,7 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
 
     put:
       tags:
@@ -2835,7 +2961,7 @@ paths:
               example:
                 statusCode: 404
                 message: Usuario-Item con id 999 no encontrado
-                errors: {}
+                errors: { }
         '500':
           description: Error interno del servidor
           content:
@@ -2845,7 +2971,7 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
 
     delete:
       tags:
@@ -2873,7 +2999,7 @@ paths:
               example:
                 statusCode: 404
                 message: Usuario-Item con id 999 no encontrado
-                errors: {}
+                errors: { }
         '500':
           description: Error interno del servidor
           content:
@@ -2883,7 +3009,7 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }
 
   /usuario-items/{id}/visible:
     patch:
@@ -2973,7 +3099,7 @@ paths:
               example:
                 statusCode: 404
                 message: Usuario-Item con id 999 no encontrado
-                errors: {}
+                errors: { }
         '500':
           description: Error interno del servidor
           content:
@@ -2983,4 +3109,4 @@ paths:
               example:
                 statusCode: 500
                 message: Error interno del servidor
-                errors: {}
+                errors: { }

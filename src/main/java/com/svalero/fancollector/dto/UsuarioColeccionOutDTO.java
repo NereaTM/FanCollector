@@ -12,5 +12,6 @@ public class UsuarioColeccionOutDTO {
     private Long idColeccion;
     private Boolean esFavorita;
     private Boolean esCreador;
+    private Boolean esVisible;
     private LocalDateTime fechaAgregada;
 }

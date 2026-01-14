@@ -5,6 +5,7 @@ import com.svalero.fancollector.dto.UsuarioColeccionInDTO;
 import com.svalero.fancollector.dto.UsuarioColeccionOutDTO;
 import com.svalero.fancollector.dto.UsuarioColeccionPutDTO;
 import com.svalero.fancollector.dto.patches.UsuarioColeccionFavoritaDTO;
+import com.svalero.fancollector.dto.patches.UsuarioColeccionVisibleDTO;
 import com.svalero.fancollector.exception.domain.ColeccionNoEncontradaException;
 import com.svalero.fancollector.exception.domain.UsuarioColeccionNoEncontradoException;
 import com.svalero.fancollector.exception.domain.UsuarioNoEncontradoException;
@@ -48,6 +49,7 @@ public class UsuarioColeccionControllerTest {
         uc1.setIdColeccion(1L);
         uc1.setEsFavorita(true);
         uc1.setEsCreador(false);
+        uc1.setEsVisible(true);
         uc1.setFechaAgregada(LocalDateTime.now());
 
         UsuarioColeccionOutDTO uc2 = new UsuarioColeccionOutDTO();
@@ -56,11 +58,12 @@ public class UsuarioColeccionControllerTest {
         uc2.setIdColeccion(2L);
         uc2.setEsFavorita(false);
         uc2.setEsCreador(true);
+        uc2.setEsVisible(true);
         uc2.setFechaAgregada(LocalDateTime.now());
 
         List<UsuarioColeccionOutDTO> lista = List.of(uc1, uc2);
 
-        when(usuarioColeccionService.listar(null, null, null)).thenReturn(lista);
+        when(usuarioColeccionService.listar(null, null,null,  null)).thenReturn(lista);
 
         mockMvc.perform(get("/usuario-colecciones")
                         .accept(MediaType.APPLICATION_JSON))
@@ -253,6 +256,47 @@ public class UsuarioColeccionControllerTest {
     @Test
     public void testActualizarFavoritaBodyInvalido() throws Exception {
         mockMvc.perform(patch("/usuario-colecciones/1/favorita")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void testActualizarVisible() throws Exception {
+        UsuarioColeccionVisibleDTO visibleDTO = new UsuarioColeccionVisibleDTO();
+        visibleDTO.setEsVisible(false);
+
+        UsuarioColeccionOutDTO outDTO = new UsuarioColeccionOutDTO();
+        outDTO.setId(1L);
+        outDTO.setEsVisible(false);
+
+        when(usuarioColeccionService.actualizarVisible(eq(1L), any(UsuarioColeccionVisibleDTO.class)))
+                .thenReturn(outDTO);
+
+        mockMvc.perform(patch("/usuario-colecciones/1/visible")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(visibleDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.esVisible").value(false));
+    }
+
+    @Test
+    public void testActualizarVisibleNoExiste() throws Exception {
+        UsuarioColeccionVisibleDTO visibleDTO = new UsuarioColeccionVisibleDTO();
+        visibleDTO.setEsVisible(true);
+
+        when(usuarioColeccionService.actualizarVisible(eq(999L), any(UsuarioColeccionVisibleDTO.class)))
+                .thenThrow(new UsuarioColeccionNoEncontradoException(999L));
+
+        mockMvc.perform(patch("/usuario-colecciones/999/visible")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(visibleDTO)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void testActualizarVisibleBodyInvalido() throws Exception {
+        mockMvc.perform(patch("/usuario-colecciones/1/visible")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest());

@@ -37,4 +37,7 @@ public class UsuarioColeccion {
 
     @Column(name = "es_creador")
     private boolean esCreador = false;
+
+    @Column(name = "es_visible") //PATCH
+    private boolean esVisible = true;
 }

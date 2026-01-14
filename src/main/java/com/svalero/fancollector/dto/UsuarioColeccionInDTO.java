@@ -13,6 +13,7 @@ public class UsuarioColeccionInDTO {
     private Long idColeccion;
 
     private Boolean esFavorita = false;
-
     private Boolean esCreador = false;
+    private Boolean esVisible = true;
+
 }

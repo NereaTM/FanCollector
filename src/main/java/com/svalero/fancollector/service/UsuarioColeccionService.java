@@ -4,6 +4,7 @@ import com.svalero.fancollector.dto.UsuarioColeccionInDTO;
 import com.svalero.fancollector.dto.UsuarioColeccionOutDTO;
 import com.svalero.fancollector.dto.UsuarioColeccionPutDTO;
 import com.svalero.fancollector.dto.patches.UsuarioColeccionFavoritaDTO;
+import com.svalero.fancollector.dto.patches.UsuarioColeccionVisibleDTO;
 import com.svalero.fancollector.exception.domain.ColeccionNoEncontradaException;
 import com.svalero.fancollector.exception.domain.UsuarioColeccionNoEncontradoException;
 import com.svalero.fancollector.exception.domain.UsuarioNoEncontradoException;
@@ -18,7 +19,7 @@ public interface UsuarioColeccionService {
     UsuarioColeccionOutDTO buscarPorId(Long id)
             throws UsuarioColeccionNoEncontradoException;
 
-    List<UsuarioColeccionOutDTO> listar(Long idUsuario, Long idColeccion, Boolean soloFavoritas);
+    List<UsuarioColeccionOutDTO> listar(Long idUsuario, Long idColeccion, Boolean soloFavoritas, Boolean esVisible);
 
     UsuarioColeccionOutDTO actualizar(Long id, UsuarioColeccionPutDTO dto)
             throws UsuarioColeccionNoEncontradoException;
@@ -26,7 +27,9 @@ public interface UsuarioColeccionService {
     void eliminar(Long id)
            throws UsuarioColeccionNoEncontradoException;
 
-
     UsuarioColeccionOutDTO actualizarFavorita(Long id, UsuarioColeccionFavoritaDTO dto)
+            throws UsuarioColeccionNoEncontradoException;
+
+    UsuarioColeccionOutDTO actualizarVisible(Long id, UsuarioColeccionVisibleDTO dto)
             throws UsuarioColeccionNoEncontradoException;
 }

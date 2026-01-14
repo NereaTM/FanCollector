@@ -7,6 +7,7 @@ import com.svalero.fancollector.dto.UsuarioColeccionInDTO;
 import com.svalero.fancollector.dto.UsuarioColeccionOutDTO;
 import com.svalero.fancollector.dto.UsuarioColeccionPutDTO;
 import com.svalero.fancollector.dto.patches.UsuarioColeccionFavoritaDTO;
+import com.svalero.fancollector.dto.patches.UsuarioColeccionVisibleDTO;
 import com.svalero.fancollector.exception.domain.ColeccionNoEncontradaException;
 import com.svalero.fancollector.exception.domain.UsuarioColeccionNoEncontradoException;
 import com.svalero.fancollector.exception.domain.UsuarioNoEncontradoException;
@@ -158,7 +159,7 @@ public class UsuarioColeccionServiceTest {
         when(modelMapper.map(uc1, UsuarioColeccionOutDTO.class)).thenReturn(dto1);
         when(modelMapper.map(uc2, UsuarioColeccionOutDTO.class)).thenReturn(dto2);
 
-        List<UsuarioColeccionOutDTO> resultado = usuarioColeccionService.listar(null, null, null);
+        List<UsuarioColeccionOutDTO> resultado = usuarioColeccionService.listar(null, null, null,null);
 
         assertEquals(2, resultado.size());
         assertEquals(1L, resultado.get(0).getId());
@@ -217,6 +218,45 @@ public class UsuarioColeccionServiceTest {
         assertTrue(resultado.getEsFavorita());
         verify(usuarioColeccionRepository, times(1)).findById(1L);
         verify(usuarioColeccionRepository, times(1)).save(any(UsuarioColeccion.class));
+    }
+
+    @Test
+    public void testActualizarVisible() throws UsuarioColeccionNoEncontradoException {
+        UsuarioColeccionVisibleDTO dto = new UsuarioColeccionVisibleDTO();
+        dto.setEsVisible(false);
+
+        UsuarioColeccion uc = new UsuarioColeccion();
+        uc.setId(1L);
+        uc.setEsVisible(true);
+
+        UsuarioColeccionOutDTO outDTO = new UsuarioColeccionOutDTO();
+        outDTO.setId(1L);
+        outDTO.setEsVisible(false);
+
+        when(usuarioColeccionRepository.findById(1L)).thenReturn(Optional.of(uc));
+        when(usuarioColeccionRepository.save(any(UsuarioColeccion.class))).thenReturn(uc);
+        when(modelMapper.map(uc, UsuarioColeccionOutDTO.class)).thenReturn(outDTO);
+
+        UsuarioColeccionOutDTO resultado = usuarioColeccionService.actualizarVisible(1L, dto);
+
+        assertFalse(resultado.getEsVisible());
+        verify(usuarioColeccionRepository, times(1)).findById(1L);
+        verify(usuarioColeccionRepository, times(1)).save(any(UsuarioColeccion.class));
+    }
+
+    @Test
+    public void testActualizarVisibleNoEncontrado() {
+        UsuarioColeccionVisibleDTO dto = new UsuarioColeccionVisibleDTO();
+        dto.setEsVisible(false);
+
+        when(usuarioColeccionRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(UsuarioColeccionNoEncontradoException.class, () -> {
+            usuarioColeccionService.actualizarVisible(999L, dto);
+        });
+
+        verify(usuarioColeccionRepository, times(1)).findById(999L);
+        verify(usuarioColeccionRepository, times(0)).save(any(UsuarioColeccion.class));
     }
 
     @Test
