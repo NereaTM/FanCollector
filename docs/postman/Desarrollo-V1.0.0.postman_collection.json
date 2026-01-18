@@ -1,0 +1,1141 @@
+{
+  "info": {
+    "_postman_id": "623e94ba-97b4-4b56-a15b-75d6301946be",
+    "name": "Desarrollo-Basic",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "49388030",
+    "_collection_link": "https://go.postman.co/collection/49388030-623e94ba-97b4-4b56-a15b-75d6301946be?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "COLECCION",
+      "item": [
+        {
+          "name": "OBTENER TODOS",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/colecciones",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "colecciones"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OBTENER POR ID",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/colecciones/{{coleccionId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "colecciones",
+                "{{coleccionId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FILTROS",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/colecciones?nombreCreador=nerea&categoria=figuras&nombre=bts&idCreador={{usuarioId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "colecciones"
+              ],
+              "query": [
+                {
+                  "key": "nombreCreador",
+                  "value": "nerea"
+                },
+                {
+                  "key": "categoria",
+                  "value": "figuras"
+                },
+                {
+                  "key": "nombre",
+                  "value": "bts"
+                },
+                {
+                  "key": "idCreador",
+                  "value": "{{usuarioId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "CREAR COLECCION",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"idCreador\": \"{{usuarioId}}\",\r\n  \"nombre\": \"BTS LY\",\r\n  \"descripcion\": \"Solo la era LY\",\r\n  \"categoria\": \"BTS\",\r\n  \"imagenPortada\": \"46545\",\r\n  \"esPublica\": true,\r\n  \"usableComoPlantilla\": false\r\n}\r\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/colecciones",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "colecciones"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ACTUALIZAR POR ID",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "    {\r\n        \"nombre\": \"BTS LYPUT\",\r\n        \"descripcion\": \"Solo la era LY NereaPUT\",\r\n        \"categoria\": \"KPOP\",\r\n        \"imagenPortada\": \"46545PUT\",\r\n        \"fechaCreacion\": \"2025-12-03T13:11:41.303461\",\r\n        \"esPublica\": true,\r\n        \"usableComoPlantilla\": false\r\n    }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/colecciones/{{coleccionId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "colecciones",
+                "{{coleccionId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ACTUALIZAR PLANTILLA",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"usableComoPlantilla\": true\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/colecciones/{{coleccionId}}/plantilla",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "colecciones",
+                "{{coleccionId}}",
+                "plantilla"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ACTUALIZAR PUBLICO",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"esPublica\": false\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/colecciones/{{coleccionId}}/publico",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "colecciones",
+                "{{coleccionId}}",
+                "publico"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ELIMINAR POR ID",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/colecciones/{{coleccionId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "colecciones",
+                "{{coleccionId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "ITEM",
+      "item": [
+        {
+          "name": "OBTENER TODOS",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/items",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "items"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "BUSCAR POR ID",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/items/{{itemId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "items",
+                "{{itemId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FILTROS",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_active}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/items?idColeccion={{coleccionId}}&texto=rm&rareza=RARO&tipo=Photocard",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "items"
+              ],
+              "query": [
+                {
+                  "key": "idColeccion",
+                  "value": "{{coleccionId}}"
+                },
+                {
+                  "key": "texto",
+                  "value": "rm"
+                },
+                {
+                  "key": "rareza",
+                  "value": "RARO"
+                },
+                {
+                  "key": "tipo",
+                  "value": "Photocard"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "CREAR ITEM",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"idColeccion\": \"{{coleccionId}}\",\r\n  \"nombre\": \"RM - Map of the Soul: 7\",\r\n  \"descripcion\": \"Photocard de RM del álbum MOTS:7\",\r\n  \"imagenUrl\": \"rm.jpg\",\r\n  \"tipo\": \"Photocard\",\r\n  \"rareza\": \"RARO\",\r\n  \"anioLanzamiento\": 2020\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/items",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "items"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ACTUALIZAR POR ID",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nombre\": \"RM - MOTS 7 (Ed. Actualizada)\",\r\n  \"descripcion\": \"Descripción actualizada\",\r\n  \"imagenUrl\": \"rm-updated.jpg\",\r\n  \"tipo\": \"Photocard\",\r\n  \"rareza\": \"EPICO\",\r\n  \"anioLanzamiento\": 2021\r\n}\r\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/items/{{itemId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "items",
+                "{{itemId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ACTUALIZAR RAREZA",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"rareza\": \"COMUN\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/items/{{itemId}}/rareza",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "items",
+                "{{itemId}}",
+                "rareza"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ELIMINAR POR ID",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/items/{{itemId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "items",
+                "{{itemId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "USUARIO/COLECCION",
+      "item": [
+        {
+          "name": "OBTENER TODO",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuario-colecciones",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuario-colecciones"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OBTENER POR ID",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuario-colecciones/{{usuarioColeccionId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuario-colecciones",
+                "{{usuarioColeccionId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FILTROS",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_active}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuario-colecciones?id=3&idUsuario=1&idColeccion=2&soloFavoritas=false",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuario-colecciones"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "3"
+                },
+                {
+                  "key": "idUsuario",
+                  "value": "1"
+                },
+                {
+                  "key": "idColeccion",
+                  "value": "2"
+                },
+                {
+                  "key": "soloFavoritas",
+                  "value": "false",
+                  "description": "true/false"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "CREAR USUARIO/COLECCION",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"idUsuario\": \"{{usuarioId}}\",\r\n    \"idColeccion\": \"{{coleccionId}}\",\r\n    \"esFavorita\": true,\r\n    \"esCreador\": false\r\n    \r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/usuario-colecciones",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuario-colecciones"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ACTUALIZAR",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"idUsuario\": \"{{usuarioId}}\",\r\n    \"idColeccion\": \"{{coleccionId}}\",\r\n    \"esFavorita\": true,\r\n    \"esCreador\": false,\r\n    \"esVisible\": true\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/usuario-colecciones/{{usuarioColeccionId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuario-colecciones",
+                "{{usuarioColeccionId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "CAMBIAR FAVORITO",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"esFavorita\": false\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/usuario-colecciones/{{usuarioColeccionId}}/favorita",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuario-colecciones",
+                "{{usuarioColeccionId}}",
+                "favorita"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ELIMINAR USUARIO-COLECCION",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/usuario-colecciones/{{usuarioColeccionId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuario-colecciones",
+                "{{usuarioColeccionId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "USUARIO/ITEM",
+      "item": [
+        {
+          "name": "OBTENER TODO",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuario-items",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuario-items"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OBTENER POR ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuario-items/{{usuarioItemId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuario-items",
+                "{{usuarioItemId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FILTROS",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuario-items?idUsuario=19&estado=TENGO",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuario-items"
+              ],
+              "query": [
+                {
+                  "key": "idUsuario",
+                  "value": "19"
+                },
+                {
+                  "key": "estado",
+                  "value": "TENGO"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "CREAR USUARIO/ITEM",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"idUsuario\": \"{{usuarioId}}\",\r\n  \"idColeccion\": \"{{coleccionId}}\",\r\n  \"idItem\": \"{{itemId}}\",\r\n  \"estado\": \"TENGO\",\r\n  \"cantidad\": 1,\r\n  \"notas\": \"En perfecto estado, con sobre original\",\r\n  \"esVisible\": true\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/usuario-items",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuario-items"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "EDITAR USUARIO-ITEM",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"estado\": \"TENGO\",\r\n    \"esVisible\": false,\r\n    \"notas\": \"Intercambio pendiente\",\r\n    \"cantidad\": 2\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/usuario-items/{{usuarioItemId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuario-items",
+                "{{usuarioItemId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ACTUALIZAR VISIBILIDAD",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"esVisible\": true\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/usuario-items/{{usuarioItemId}}/visible",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuario-items",
+                "{{usuarioItemId}}",
+                "visible"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ELIMINAR USUARIO/ITEM",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuario-items/{{usuarioItemId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuario-items",
+                "{{usuarioItemId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "USUARIOS",
+      "item": [
+        {
+          "name": "OBTENER TODOS",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/usuarios",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OBTENER POR ID",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuarios/{{usuarioId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FILTROS",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_active}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuarios?rol=USER&nombre=juan&email=nerea@gmail.com",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios"
+              ],
+              "query": [
+                {
+                  "key": "rol",
+                  "value": "USER"
+                },
+                {
+                  "key": "nombre",
+                  "value": "juan",
+                  "type": "text"
+                },
+                {
+                  "key": "email",
+                  "value": "nerea@gmail.com",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "CREAR USUARIO",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const now = new Date();\r",
+                  "const dateStr = now.toISOString().replace(/[:.]/g, '-');\r",
+                  "pm.environment.set(\"test_email\", `test-${dateStr}@gmail.com`);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "jwt",
+              "jwt": [
+                {
+                  "key": "algorithm",
+                  "value": "HS256",
+                  "type": "string"
+                },
+                {
+                  "key": "isSecretBase64Encoded",
+                  "value": false,
+                  "type": "boolean"
+                },
+                {
+                  "key": "payload",
+                  "value": "{}",
+                  "type": "string"
+                },
+                {
+                  "key": "addTokenTo",
+                  "value": "header",
+                  "type": "string"
+                },
+                {
+                  "key": "headerPrefix",
+                  "value": "Bearer",
+                  "type": "string"
+                },
+                {
+                  "key": "queryParamKey",
+                  "value": "token",
+                  "type": "string"
+                },
+                {
+                  "key": "header",
+                  "value": "{}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nombre\": \"Nerea\",\r\n  \"email\": \"{{test_email}}\",\r\n  \"contrasena\": \"123456\",\r\n  \"role\": \"ADMIN\",\r\n  \"urlAvatar\": \"\",\r\n  \"descripcion\": \"Fan del anime y el K-pop\",\r\n  \"contactoPublico\": \"@nereaa\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/usuarios",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ACTUALIZAR POR ID",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const now = new Date();\r",
+                  "const dateStr = now.toISOString().replace(/[:.]/g, '-');\r",
+                  "pm.environment.set(\"test_email\", `test-${dateStr}@ejemplo.com`);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nombre\": \"Nerea PUT\",\r\n  \"email\": \"{{test_email}}\",\r\n  \"contrasena\": \"123PUT\",\r\n  \"role\": \"ADMIN\",\r\n  \"urlAvatar\": \"PUT\",\r\n  \"descripcion\": \"PUT\",\r\n  \"contactoPublico\": \"@nereaPUT\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/usuarios/{{usuarioId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ACTUALIZAR CONTRASEÑA",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"contrasena\": \"12345\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/usuarios/{{usuarioId}}/contrasena",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioId}}",
+                "contrasena"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ELIMINAR USUARIO",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuarios/{{usuarioId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": ""
+    }
+  ]
+}
