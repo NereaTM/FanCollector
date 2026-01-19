@@ -107,8 +107,7 @@ public final class Permisos {
     }
 
     public static void checkPuedeEditarOBorrarUsuarioColeccion(UsuarioColeccion uc, Usuario actual, boolean esAdmin, boolean esMods) {
-        if (uc == null) {
-            throw new AccesoDenegadoException();}
+        if (uc == null) {throw new AccesoDenegadoException();}
         if (esAdmin) return;
         if (esMods) return;
         if (esDuenoRelacion(uc, actual)) return;
@@ -116,8 +115,7 @@ public final class Permisos {
     }
 
     public static void checkPuedeEditarOBorrarUsuarioItem(UsuarioItem ui, Usuario actual, boolean esAdmin, boolean esMods) {
-        if (ui == null) {
-            throw new AccesoDenegadoException();}
+        if (ui == null) {throw new AccesoDenegadoException();}
         if (esAdmin) return;
         if (esMods) return;
         if (esDuenoItem(ui, actual)) return;

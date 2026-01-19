@@ -17,7 +17,7 @@ public class CurrentUserResolver {
 
     public Usuario usuarioActual(String emailUsuario) {
         if (emailUsuario == null || emailUsuario.isBlank()) {
-            throw new AccesoDenegadoException("Usuario no autenticado");
+            throw new AccesoDenegadoException();
         }
         return usuarioRepository.findByEmail(emailUsuario)
                 .orElseThrow(() -> UsuarioNoEncontradoException.porEmail(emailUsuario));

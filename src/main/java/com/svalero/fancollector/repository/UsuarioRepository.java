@@ -8,12 +8,14 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     boolean existsByEmail(String email);
     boolean existsByEmailAndIdNot(String email, Long id);
+    Optional<Usuario> findByEmail(String email);
 
     @Query("""
        SELECT u FROM Usuario u

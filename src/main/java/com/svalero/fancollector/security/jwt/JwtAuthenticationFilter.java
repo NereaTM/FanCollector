@@ -15,7 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-@Component // todo (3)
+@Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
@@ -27,48 +27,39 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
         try {
             String token = parseJwt(request);
-
-            System.out.println("🔍 Token recibido: " + (token != null ? "SÍ" : "NO"));
-
+            System.out.println("Token recibido: " + (token != null ? "S" : "N"));
             // Si no hay token, seguimos (Spring decidirá si hace falta estar autenticado)
             if (token != null && jwtService.validateToken(token)) {
-
-                System.out.println("✅ Token válido");
+                System.out.println("Token ok");
 
                 String email = jwtService.getEmailFromToken(token);
-
                 System.out.println("📧 Email del token: " + email);
 
-                // Evita sobreescribir autenticación si ya existe
+                // para no sobrescribir
                 if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                     UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-
-                    System.out.println("👤 Usuario cargado: " + userDetails.getUsername());
-                    System.out.println("🔐 Authorities: " + userDetails.getAuthorities());
-
+//                    System.out.println("Usuario cargado: " + userDetails.getUsername());
+//                    System.out.println("Authorities: " + userDetails.getAuthorities());
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
                                     userDetails,
                                     null,
                                     userDetails.getAuthorities()
                             );
-
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                    System.out.println("✅ Autenticación establecida");
+                    System.out.println("Auth ok");
                 }
             } else {
-                System.out.println("❌ Token inválido o nulo");
+                System.out.println("Token nulo");
             }
         } catch (Exception e) {
-            System.err.println("❌ Error en filtro JWT: " + e.getMessage());
+            System.err.println("Error en filtro JWT: " + e.getMessage());
             e.printStackTrace();
         }
 
@@ -77,8 +68,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private String parseJwt(HttpServletRequest request) {
         String headerAuth = request.getHeader("Authorization");
-
-        System.out.println("📨 Header Authorization: " + headerAuth);
+        System.out.println("Header Auth: " + headerAuth);
 
         if (StringUtils.hasText(headerAuth) && headerAuth.startsWith("Bearer ")) {
             return headerAuth.substring(7);
