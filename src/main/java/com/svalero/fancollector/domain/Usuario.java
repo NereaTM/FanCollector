@@ -33,7 +33,6 @@ public class Usuario {
     private String email;
 
     @NotBlank
-    @Size(min = 4, max = 30)
     @JsonIgnore
     @Column(name = "contrasena", nullable = false) // PATCH
     private String contrasena;
