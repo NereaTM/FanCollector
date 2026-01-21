@@ -10,30 +10,39 @@ import com.svalero.fancollector.exception.domain.ColeccionNoEncontradaException;
 import com.svalero.fancollector.exception.domain.UsuarioColeccionNoEncontradoException;
 import com.svalero.fancollector.exception.domain.UsuarioNoEncontradoException;
 import com.svalero.fancollector.exception.validation.RelacionYaExisteException;
+import com.svalero.fancollector.security.jwt.JwtService;
 import com.svalero.fancollector.service.UsuarioColeccionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UsuarioColeccionController.class)
+@WithMockUser(username = "nerea@test.com", roles = {"USER"})
 public class UsuarioColeccionControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @MockitoBean
+    private JwtService jwtService;
 
     @MockitoBean
     private UsuarioColeccionService usuarioColeccionService;
@@ -63,8 +72,8 @@ public class UsuarioColeccionControllerTest {
 
         List<UsuarioColeccionOutDTO> lista = List.of(uc1, uc2);
 
-        when(usuarioColeccionService.listar(null, null,null,  null)).thenReturn(lista);
-
+        when(usuarioColeccionService.listar(isNull(), isNull(), isNull(), isNull(), anyString(), anyBoolean(), anyBoolean())).
+                thenReturn(lista);
         mockMvc.perform(get("/usuario-colecciones")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -80,7 +89,8 @@ public class UsuarioColeccionControllerTest {
         dto.setIdColeccion(1L);
         dto.setEsFavorita(true);
 
-        when(usuarioColeccionService.buscarPorId(1L)).thenReturn(dto);
+        when(usuarioColeccionService.buscarPorId(eq(1L), anyString(), anyBoolean(), anyBoolean()))
+                .thenReturn(dto);
 
         mockMvc.perform(get("/usuario-colecciones/1")
                         .accept(MediaType.APPLICATION_JSON))
@@ -91,7 +101,7 @@ public class UsuarioColeccionControllerTest {
 
     @Test
     public void testBuscarUsuarioColeccionPorIdNoExiste() throws Exception {
-        when(usuarioColeccionService.buscarPorId(999L))
+        when(usuarioColeccionService.buscarPorId(eq(999L), anyString(), anyBoolean(), anyBoolean()))
                 .thenThrow(new UsuarioColeccionNoEncontradoException(999L));
 
         mockMvc.perform(get("/usuario-colecciones/999")
@@ -112,9 +122,11 @@ public class UsuarioColeccionControllerTest {
         outDTO.setIdColeccion(1L);
         outDTO.setEsFavorita(true);
 
-        when(usuarioColeccionService.crear(any(UsuarioColeccionInDTO.class))).thenReturn(outDTO);
+        when(usuarioColeccionService.crear(any(UsuarioColeccionInDTO.class), anyString(), anyBoolean(), anyBoolean()))
+                .thenReturn(outDTO);
 
         mockMvc.perform(post("/usuario-colecciones")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(inDTO))
                         .accept(MediaType.APPLICATION_JSON))
@@ -126,6 +138,7 @@ public class UsuarioColeccionControllerTest {
     @Test
     public void testCrearUsuarioColeccionBodyInvalido() throws Exception {
         mockMvc.perform(post("/usuario-colecciones")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}")
                         .accept(MediaType.APPLICATION_JSON))
@@ -138,10 +151,11 @@ public class UsuarioColeccionControllerTest {
         inDTO.setIdUsuario(999L);
         inDTO.setIdColeccion(1L);
 
-        when(usuarioColeccionService.crear(any(UsuarioColeccionInDTO.class)))
+        when(usuarioColeccionService.crear(any(UsuarioColeccionInDTO.class), anyString(), anyBoolean(), anyBoolean()))
                 .thenThrow(new UsuarioNoEncontradoException(999L));
 
         mockMvc.perform(post("/usuario-colecciones")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(inDTO)))
                 .andExpect(status().isNotFound());
@@ -153,10 +167,11 @@ public class UsuarioColeccionControllerTest {
         inDTO.setIdUsuario(1L);
         inDTO.setIdColeccion(999L);
 
-        when(usuarioColeccionService.crear(any(UsuarioColeccionInDTO.class)))
-                .thenThrow(new ColeccionNoEncontradaException(999L));
+        when(usuarioColeccionService.crear(any(UsuarioColeccionInDTO.class), anyString(), anyBoolean(), anyBoolean()))
+                .thenThrow(new UsuarioNoEncontradoException(999L));
 
         mockMvc.perform(post("/usuario-colecciones")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(inDTO)))
                 .andExpect(status().isNotFound());
@@ -168,10 +183,11 @@ public class UsuarioColeccionControllerTest {
         inDTO.setIdUsuario(1L);
         inDTO.setIdColeccion(1L);
 
-        when(usuarioColeccionService.crear(any(UsuarioColeccionInDTO.class)))
+        when(usuarioColeccionService.crear(any(UsuarioColeccionInDTO.class), anyString(), anyBoolean(), anyBoolean()))
                 .thenThrow(new RelacionYaExisteException());
 
         mockMvc.perform(post("/usuario-colecciones")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(inDTO)))
                 .andExpect(status().isBadRequest());
@@ -187,10 +203,11 @@ public class UsuarioColeccionControllerTest {
         outDTO.setId(1L);
         outDTO.setEsFavorita(true);
 
-        when(usuarioColeccionService.actualizar(eq(1L), any(UsuarioColeccionPutDTO.class)))
+        when(usuarioColeccionService.actualizar(eq(1L), any(UsuarioColeccionPutDTO.class), anyString(), anyBoolean(), anyBoolean()))
                 .thenReturn(outDTO);
 
         mockMvc.perform(put("/usuario-colecciones/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(putDTO)))
                 .andExpect(status().isOk())
@@ -202,10 +219,11 @@ public class UsuarioColeccionControllerTest {
         UsuarioColeccionPutDTO putDTO = new UsuarioColeccionPutDTO();
         putDTO.setEsFavorita(true);
 
-        when(usuarioColeccionService.actualizar(eq(1L), any(UsuarioColeccionPutDTO.class)))
+        when(usuarioColeccionService.actualizar(eq(1L), any(UsuarioColeccionPutDTO.class), anyString(), anyBoolean(), anyBoolean()))
                 .thenThrow(new UsuarioColeccionNoEncontradoException(1L));
 
         mockMvc.perform(put("/usuario-colecciones/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(putDTO)))
                 .andExpect(status().isNotFound());
@@ -214,6 +232,7 @@ public class UsuarioColeccionControllerTest {
     @Test
     public void testModificarUsuarioColeccionJsonNoParseable() throws Exception {
         mockMvc.perform(put("/usuario-colecciones/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"esFavorita\": \"no es un booleano\"}"))
                 .andExpect(status().isInternalServerError())
@@ -229,10 +248,11 @@ public class UsuarioColeccionControllerTest {
         outDTO.setId(1L);
         outDTO.setEsFavorita(true);
 
-        when(usuarioColeccionService.actualizarFavorita(eq(1L), any(UsuarioColeccionFavoritaDTO.class)))
+        when(usuarioColeccionService.actualizarFavorita(eq(1L), any(UsuarioColeccionFavoritaDTO.class), anyString(), anyBoolean(), anyBoolean()))
                 .thenReturn(outDTO);
 
         mockMvc.perform(patch("/usuario-colecciones/1/favorita")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(favDTO)))
                 .andExpect(status().isOk())
@@ -244,10 +264,11 @@ public class UsuarioColeccionControllerTest {
         UsuarioColeccionFavoritaDTO favDTO = new UsuarioColeccionFavoritaDTO();
         favDTO.setEsFavorita(true);
 
-        when(usuarioColeccionService.actualizarFavorita(eq(999L), any(UsuarioColeccionFavoritaDTO.class)))
+        when(usuarioColeccionService.actualizarFavorita(eq(999L),any(UsuarioColeccionFavoritaDTO.class),anyString(),anyBoolean(),anyBoolean()))
                 .thenThrow(new UsuarioColeccionNoEncontradoException(999L));
 
         mockMvc.perform(patch("/usuario-colecciones/999/favorita")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(favDTO)))
                 .andExpect(status().isNotFound());
@@ -256,6 +277,7 @@ public class UsuarioColeccionControllerTest {
     @Test
     public void testActualizarFavoritaBodyInvalido() throws Exception {
         mockMvc.perform(patch("/usuario-colecciones/1/favorita")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest());
@@ -270,10 +292,11 @@ public class UsuarioColeccionControllerTest {
         outDTO.setId(1L);
         outDTO.setEsVisible(false);
 
-        when(usuarioColeccionService.actualizarVisible(eq(1L), any(UsuarioColeccionVisibleDTO.class)))
+        when(usuarioColeccionService.actualizarVisible(eq(1L), any(UsuarioColeccionVisibleDTO.class), anyString(), anyBoolean(), anyBoolean()))
                 .thenReturn(outDTO);
 
         mockMvc.perform(patch("/usuario-colecciones/1/visible")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(visibleDTO)))
                 .andExpect(status().isOk())
@@ -285,10 +308,11 @@ public class UsuarioColeccionControllerTest {
         UsuarioColeccionVisibleDTO visibleDTO = new UsuarioColeccionVisibleDTO();
         visibleDTO.setEsVisible(true);
 
-        when(usuarioColeccionService.actualizarVisible(eq(999L), any(UsuarioColeccionVisibleDTO.class)))
+        when(usuarioColeccionService.actualizarVisible(eq(999L),any(UsuarioColeccionVisibleDTO.class),anyString(),anyBoolean(),anyBoolean()))
                 .thenThrow(new UsuarioColeccionNoEncontradoException(999L));
 
         mockMvc.perform(patch("/usuario-colecciones/999/visible")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(visibleDTO)))
                 .andExpect(status().isNotFound());
@@ -297,6 +321,7 @@ public class UsuarioColeccionControllerTest {
     @Test
     public void testActualizarVisibleBodyInvalido() throws Exception {
         mockMvc.perform(patch("/usuario-colecciones/1/visible")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest());
@@ -304,16 +329,18 @@ public class UsuarioColeccionControllerTest {
 
     @Test
     public void testEliminarUsuarioColeccionExistente() throws Exception {
-        mockMvc.perform(delete("/usuario-colecciones/1"))
+        mockMvc.perform(delete("/usuario-colecciones/1")
+                        .with(csrf()))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     public void testEliminarUsuarioColeccionNoExiste() throws Exception {
         doThrow(new UsuarioColeccionNoEncontradoException(1L))
-                .when(usuarioColeccionService).eliminar(1L);
+                .when(usuarioColeccionService).eliminar(eq(1L),anyString(),anyBoolean(),anyBoolean());
 
-        mockMvc.perform(delete("/usuario-colecciones/1"))
+        mockMvc.perform(delete("/usuario-colecciones/1")
+                        .with(csrf()))
                 .andExpect(status().isNotFound());
     }
 }
