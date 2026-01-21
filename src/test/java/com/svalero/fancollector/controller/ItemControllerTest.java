@@ -8,32 +8,43 @@ import com.svalero.fancollector.dto.ItemPutDTO;
 import com.svalero.fancollector.dto.patches.ItemRarezaDTO;
 import com.svalero.fancollector.exception.domain.ColeccionNoEncontradaException;
 import com.svalero.fancollector.exception.domain.ItemNoEncontradoException;
+import com.svalero.fancollector.security.jwt.JwtService;
 import com.svalero.fancollector.service.ItemService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ItemController.class)
+@WithMockUser(username = "nerea@test.com", roles = {"USER"})
 public class ItemControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
+    private JwtService jwtService;
+
+    @MockitoBean
     private ItemService itemService;
+
+    @MockitoBean
+    private UserDetailsService userDetailsService;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -54,8 +65,8 @@ public class ItemControllerTest {
 
         List<ItemOutDTO> items = List.of(item1, item2);
 
-        when(itemService.listarItems(null, null, null, null)).thenReturn(items);
-
+        when(itemService.listarItems(eq(null), eq(null), eq(null), eq(null), anyString(), anyBoolean(), anyBoolean()))
+                .thenReturn(items);
         mockMvc.perform(get("/items")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -70,8 +81,8 @@ public class ItemControllerTest {
         itemOutDTO.setNombre("Darkrai");
         itemOutDTO.setRareza(RarezaItem.LEGENDARIO);
 
-        when(itemService.buscarItemPorId(1L)).thenReturn(itemOutDTO);
-
+        when(itemService.buscarItemPorId(eq(1L), anyString(), anyBoolean(), anyBoolean()))
+                .thenReturn(itemOutDTO);
         mockMvc.perform(get("/items/1")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -81,7 +92,7 @@ public class ItemControllerTest {
 
     @Test
     public void testBuscarItemPorIdNoExiste() throws Exception {
-        when(itemService.buscarItemPorId(999L))
+        when(itemService.buscarItemPorId(eq(999L), anyString(), anyBoolean(), anyBoolean()))
                 .thenThrow(new ItemNoEncontradoException(999L));
 
         mockMvc.perform(get("/items/999")
@@ -102,9 +113,11 @@ public class ItemControllerTest {
         savedDto.setNombre("Darkrai");
         savedDto.setRareza(RarezaItem.LEGENDARIO);
 
-        when(itemService.crearItem(any(ItemInDTO.class))).thenReturn(savedDto);
+        when(itemService.crearItem(any(ItemInDTO.class), anyString(), anyBoolean(), anyBoolean()))
+                .thenReturn(savedDto);
 
         mockMvc.perform(post("/items")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(itemInDTO))
                         .accept(MediaType.APPLICATION_JSON))
@@ -116,6 +129,7 @@ public class ItemControllerTest {
     @Test
     public void testCrearItemBodyInvalido() throws Exception {
         mockMvc.perform(post("/items")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}")
                         .accept(MediaType.APPLICATION_JSON))
@@ -130,10 +144,11 @@ public class ItemControllerTest {
         itemInDTO.setTipo("Figura");
         itemInDTO.setRareza("LEGENDARIO");
 
-        when(itemService.crearItem(any(ItemInDTO.class)))
+        when(itemService.crearItem(any(ItemInDTO.class), anyString(), anyBoolean(), anyBoolean()))
                 .thenThrow(new ColeccionNoEncontradaException(999L));
 
         mockMvc.perform(post("/items")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(itemInDTO)))
                 .andExpect(status().isNotFound());
@@ -151,10 +166,11 @@ public class ItemControllerTest {
         response.setNombre("Darkrai");
         response.setRareza(RarezaItem.EPICO);
 
-        when(itemService.actualizarItem(eq(1L), any(ItemPutDTO.class)))
+        when(itemService.actualizarItem(eq(1L), any(ItemPutDTO.class), anyString(), anyBoolean(), anyBoolean()))
                 .thenReturn(response);
 
         mockMvc.perform(put("/items/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(itemPutDTO)))
                 .andExpect(status().isOk())
@@ -168,10 +184,11 @@ public class ItemControllerTest {
         itemPutDTO.setTipo("Figura");
         itemPutDTO.setRareza("COMUN");
 
-        when(itemService.actualizarItem(eq(1L), any(ItemPutDTO.class)))
+        when(itemService.actualizarItem(eq(1L), any(ItemPutDTO.class), anyString(), anyBoolean(), anyBoolean()))
                 .thenThrow(new ItemNoEncontradoException(1L));
 
         mockMvc.perform(put("/items/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(itemPutDTO)))
                 .andExpect(status().isNotFound());
@@ -180,6 +197,7 @@ public class ItemControllerTest {
     @Test
     public void testModificarItemBodyInvalido() throws Exception {
         mockMvc.perform(put("/items/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest());
@@ -194,9 +212,10 @@ public class ItemControllerTest {
         response.setId(1L);
         response.setRareza(RarezaItem.LEGENDARIO);
 
-        when(itemService.actualizarRareza(eq(1L), eq(RarezaItem.LEGENDARIO))).thenReturn(response);
-
+        when(itemService.actualizarRareza(eq(1L), eq(RarezaItem.LEGENDARIO), anyString(), anyBoolean(), anyBoolean()))
+                .thenReturn(response);
         mockMvc.perform(patch("/items/1/rareza")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(rarezaDTO)))
                 .andExpect(status().isOk())
@@ -208,10 +227,11 @@ public class ItemControllerTest {
         ItemRarezaDTO rarezaDTO = new ItemRarezaDTO();
         rarezaDTO.setRareza(RarezaItem.LEGENDARIO);
 
-        when(itemService.actualizarRareza(eq(999L), eq(RarezaItem.LEGENDARIO)))
+        when(itemService.actualizarRareza(eq(999L), eq(RarezaItem.LEGENDARIO), anyString(), anyBoolean(), anyBoolean()))
                 .thenThrow(new ItemNoEncontradoException(999L));
 
         mockMvc.perform(patch("/items/999/rareza")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(rarezaDTO)))
                 .andExpect(status().isNotFound());
@@ -220,6 +240,7 @@ public class ItemControllerTest {
     @Test
     public void testActualizarRarezaBodyInvalido() throws Exception {
         mockMvc.perform(patch("/items/1/rareza")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest());
@@ -227,16 +248,18 @@ public class ItemControllerTest {
 
     @Test
     public void testEliminarItemExistente() throws Exception {
-        mockMvc.perform(delete("/items/1"))
+        mockMvc.perform(delete("/items/1")
+                        .with(csrf()))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     public void testEliminarItemNoExiste() throws Exception {
         doThrow(new ItemNoEncontradoException(1L))
-                .when(itemService).eliminarItem(1L);
+                .when(itemService).eliminarItem(eq(1L), anyString(), anyBoolean(), anyBoolean());
 
-        mockMvc.perform(delete("/items/1"))
+        mockMvc.perform(delete("/items/1")
+                        .with(csrf()))
                 .andExpect(status().isNotFound());
     }
 }
