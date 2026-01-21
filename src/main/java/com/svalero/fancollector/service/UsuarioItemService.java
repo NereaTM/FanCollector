@@ -13,19 +13,20 @@ import java.util.List;
 
 public interface UsuarioItemService {
 
-    UsuarioItemOutDTO crear(UsuarioItemInDTO dto)
+    UsuarioItemOutDTO crear(UsuarioItemInDTO dto, String emailUsuario, boolean esAdmin, boolean esMods)
             throws UsuarioNoEncontradoException, ItemNoEncontradoException, ColeccionNoEncontradaException;
 
-    UsuarioItemOutDTO buscarPorId(Long id) throws UsuarioItemNoEncontradoException;
+    UsuarioItemOutDTO buscarPorId(Long id, String emailUsuario, boolean esAdmin, boolean esMods)
+            throws UsuarioItemNoEncontradoException;
 
     List<UsuarioItemOutDTO> listar(
-            Long idUsuario, Long idItem, Long idColeccion, EstadoItem estado, Boolean esVisible);
+            Long idUsuario, Long idItem, Long idColeccion,EstadoItem estado, Boolean esVisible,String emailUsuario, boolean esAdmin, boolean esMods);
 
-    UsuarioItemOutDTO actualizarCompleto(Long id, UsuarioItemPutDTO dto)
+    UsuarioItemOutDTO actualizarCompleto(Long id, UsuarioItemPutDTO dto, String emailUsuario, boolean esAdmin, boolean esMods)
             throws UsuarioItemNoEncontradoException;
 
-    UsuarioItemOutDTO actualizarVisibilidad(Long id, Boolean esVisible)
+    UsuarioItemOutDTO actualizarVisibilidad(Long id, Boolean esVisible, String emailUsuario, boolean esAdmin, boolean esMods)
             throws UsuarioItemNoEncontradoException;
 
-    void eliminar(Long id) throws UsuarioItemNoEncontradoException;
+    void eliminar(Long id, String emailUsuario, boolean esAdmin, boolean esMods) throws UsuarioItemNoEncontradoException;
 }
