@@ -9,11 +9,13 @@ import com.svalero.fancollector.exception.domain.ColeccionNoEncontradaException;
 import com.svalero.fancollector.exception.domain.ItemNoEncontradoException;
 import com.svalero.fancollector.exception.domain.UsuarioItemNoEncontradoException;
 import com.svalero.fancollector.exception.domain.UsuarioNoEncontradoException;
+import com.svalero.fancollector.security.auth.SecurityUtils;
 import com.svalero.fancollector.service.UsuarioItemService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,9 +31,14 @@ public class UsuarioItemController {
 
     @PostMapping
     public ResponseEntity<UsuarioItemOutDTO> crear(
-            @Valid @RequestBody UsuarioItemInDTO dto
+            @Valid @RequestBody UsuarioItemInDTO dto,
+            Authentication authentication
     ) throws UsuarioNoEncontradoException, ItemNoEncontradoException, ColeccionNoEncontradaException {
-        return new ResponseEntity<>(usuarioItemService.crear(dto), HttpStatus.CREATED);
+        String email = SecurityUtils.email(authentication);
+        boolean esAdmin = SecurityUtils.isAdmin(authentication);
+        boolean esMods = SecurityUtils.isMods(authentication);
+
+        return new ResponseEntity<>(usuarioItemService.crear(dto, email, esAdmin, esMods), HttpStatus.CREATED);
     }
 
     @GetMapping
@@ -40,37 +47,64 @@ public class UsuarioItemController {
             @RequestParam(required = false) Long idItem,
             @RequestParam(required = false) Long idColeccion,
             @RequestParam(required = false) EstadoItem estado,
-            @RequestParam(required = false) Boolean esVisible
+            @RequestParam(required = false) Boolean esVisible,
+            Authentication authentication
     ) {
-        return ResponseEntity.ok(usuarioItemService.listar(idUsuario, idItem, idColeccion, estado, esVisible));
+        String email = SecurityUtils.email(authentication);
+        boolean esAdmin = SecurityUtils.isAdmin(authentication);
+        boolean esMods = SecurityUtils.isMods(authentication);
+
+        return ResponseEntity.ok(usuarioItemService.listar(idUsuario, idItem, idColeccion, estado, esVisible, email, esAdmin, esMods));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UsuarioItemOutDTO> buscar(@PathVariable Long id)
+    public ResponseEntity<UsuarioItemOutDTO> buscar(
+            @PathVariable Long id,
+            Authentication authentication)
             throws UsuarioItemNoEncontradoException {
-        return ResponseEntity.ok( usuarioItemService.buscarPorId(id));
+        String email = SecurityUtils.email(authentication);
+        boolean esAdmin = SecurityUtils.isAdmin(authentication);
+        boolean esMods = SecurityUtils.isMods(authentication);
+
+        return ResponseEntity.ok(usuarioItemService.buscarPorId(id, email, esAdmin,esMods));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioItemOutDTO> actualizarCompleto(
             @PathVariable Long id,
-            @Valid @RequestBody UsuarioItemPutDTO dto)
+            @Valid @RequestBody UsuarioItemPutDTO dto,
+            Authentication authentication)
             throws UsuarioItemNoEncontradoException {
-        return ResponseEntity.ok(usuarioItemService.actualizarCompleto(id, dto));
+        String email = SecurityUtils.email(authentication);
+        boolean esAdmin = SecurityUtils.isAdmin(authentication);
+        boolean esMods = SecurityUtils.isMods(authentication);
+
+        return ResponseEntity.ok(usuarioItemService.actualizarCompleto(id, dto, email, esAdmin, esMods));
     }
 
     @PatchMapping("/{id}/visible")
     public ResponseEntity<UsuarioItemOutDTO> actualizarVisibilidad(
             @PathVariable Long id,
-            @Valid @RequestBody UsuarioItemVisibleDTO visibleDTO)
+            @Valid @RequestBody UsuarioItemVisibleDTO visibleDTO,
+            Authentication authentication)
             throws UsuarioItemNoEncontradoException {
-        return ResponseEntity.ok(usuarioItemService.actualizarVisibilidad(id, visibleDTO.getEsVisible()));
+        String email = SecurityUtils.email(authentication);
+        boolean esAdmin = SecurityUtils.isAdmin(authentication);
+        boolean esMods = SecurityUtils.isMods(authentication);
+
+        return ResponseEntity.ok(usuarioItemService.actualizarVisibilidad(id, visibleDTO.getEsVisible(), email, esAdmin, esMods));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id)
+    public ResponseEntity<Void> eliminar(
+            @PathVariable Long id,
+            Authentication authentication)
             throws UsuarioItemNoEncontradoException {
-        usuarioItemService.eliminar(id);
+        String email = SecurityUtils.email(authentication);
+        boolean esAdmin = SecurityUtils.isAdmin(authentication);
+        boolean esMods = SecurityUtils.isMods(authentication);
+
+        usuarioItemService.eliminar(id, email, esAdmin, esMods);
         return ResponseEntity.noContent().build();
     }
 }
