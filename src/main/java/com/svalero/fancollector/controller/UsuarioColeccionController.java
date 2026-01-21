@@ -9,11 +9,13 @@ import com.svalero.fancollector.exception.domain.ColeccionNoEncontradaException;
 import com.svalero.fancollector.exception.domain.UsuarioColeccionNoEncontradoException;
 import com.svalero.fancollector.exception.domain.UsuarioNoEncontradoException;
 import com.svalero.fancollector.exception.validation.RelacionYaExisteException;
+import com.svalero.fancollector.security.auth.SecurityUtils;
 import com.svalero.fancollector.service.UsuarioColeccionService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,9 +31,14 @@ public class UsuarioColeccionController {
 
     @PostMapping
     public ResponseEntity<UsuarioColeccionOutDTO> crear(
-            @Valid @RequestBody UsuarioColeccionInDTO dto
+            @Valid @RequestBody UsuarioColeccionInDTO dto,
+            Authentication authentication
     ) throws UsuarioNoEncontradoException, ColeccionNoEncontradaException,RelacionYaExisteException {
-        return new ResponseEntity<>(usuarioColeccionService.crear(dto),HttpStatus.CREATED);
+        String email = SecurityUtils.email(authentication);
+        boolean esAdmin = SecurityUtils.isAdmin(authentication);
+        boolean esMods = SecurityUtils.isMods(authentication);
+
+        return new ResponseEntity<>(usuarioColeccionService.crear(dto, email, esAdmin, esMods),HttpStatus.CREATED);
     }
 
     @GetMapping
@@ -39,45 +46,77 @@ public class UsuarioColeccionController {
             @RequestParam(required = false) Long idUsuario,
             @RequestParam(required = false) Long idColeccion,
             @RequestParam(required = false) Boolean soloFavoritas,
-            @RequestParam(required = false) Boolean esVisible
+            @RequestParam(required = false) Boolean esVisible,
+            Authentication authentication
     ) {
-        return ResponseEntity.ok(usuarioColeccionService.listar(idUsuario, idColeccion, soloFavoritas, esVisible));
+        String email = SecurityUtils.email(authentication);
+        boolean esAdmin = SecurityUtils.isAdmin(authentication);
+        boolean esMods = SecurityUtils.isMods(authentication);
+
+        return ResponseEntity.ok(usuarioColeccionService.listar(idUsuario, idColeccion, soloFavoritas, esVisible, email, esAdmin, esMods));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UsuarioColeccionOutDTO> buscar(@PathVariable Long id)
+    public ResponseEntity<UsuarioColeccionOutDTO> buscar(
+            @PathVariable Long id,
+            Authentication authentication)
             throws UsuarioColeccionNoEncontradoException {
-        return ResponseEntity.ok(usuarioColeccionService.buscarPorId(id));
+        String email = SecurityUtils.email(authentication);
+        boolean esAdmin = SecurityUtils.isAdmin(authentication);
+        boolean esMods = SecurityUtils.isMods(authentication);
+
+        return ResponseEntity.ok(usuarioColeccionService.buscarPorId(id, email, esAdmin, esMods));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioColeccionOutDTO> actualizar(
             @PathVariable Long id,
-            @Valid @RequestBody UsuarioColeccionPutDTO dto
+            @Valid @RequestBody UsuarioColeccionPutDTO dto,
+            Authentication authentication
     ) throws UsuarioColeccionNoEncontradoException {
-        return ResponseEntity.ok(usuarioColeccionService.actualizar(id, dto));
+        String email = SecurityUtils.email(authentication);
+        boolean esAdmin = SecurityUtils.isAdmin(authentication);
+        boolean esMods = SecurityUtils.isMods(authentication);
+
+        return ResponseEntity.ok(usuarioColeccionService.actualizar(id, dto, email, esAdmin, esMods));
     }
 
     @PatchMapping("/{id}/favorita")
     public ResponseEntity<UsuarioColeccionOutDTO> actualizarFavorita(
             @PathVariable Long id,
-            @Valid @RequestBody UsuarioColeccionFavoritaDTO dto
+            @Valid @RequestBody UsuarioColeccionFavoritaDTO dto,
+            Authentication authentication
     ) throws UsuarioColeccionNoEncontradoException {
-        return ResponseEntity.ok(usuarioColeccionService.actualizarFavorita(id, dto));
+        String email = SecurityUtils.email(authentication);
+        boolean esAdmin = SecurityUtils.isAdmin(authentication);
+        boolean esMods = SecurityUtils.isMods(authentication);
+
+        return ResponseEntity.ok( usuarioColeccionService.actualizarFavorita(id, dto, email, esAdmin, esMods));
     }
 
     @PatchMapping("/{id}/visible")
     public ResponseEntity<UsuarioColeccionOutDTO> actualizarVisible(
             @PathVariable Long id,
-            @Valid @RequestBody UsuarioColeccionVisibleDTO dto
+            @Valid @RequestBody UsuarioColeccionVisibleDTO dto,
+            Authentication authentication
     ) throws UsuarioColeccionNoEncontradoException {
-        return ResponseEntity.ok(usuarioColeccionService.actualizarVisible(id, dto));
+        String email = SecurityUtils.email(authentication);
+        boolean esAdmin = SecurityUtils.isAdmin(authentication);
+        boolean esMods = SecurityUtils.isMods(authentication);
+
+        return ResponseEntity.ok(usuarioColeccionService.actualizarVisible(id, dto, email, esAdmin, esMods));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id)
+    public ResponseEntity<Void> eliminar(
+            @PathVariable Long id,
+            Authentication authentication)
             throws UsuarioColeccionNoEncontradoException {
-        usuarioColeccionService.eliminar(id);
+        String email = SecurityUtils.email(authentication);
+        boolean esAdmin = SecurityUtils.isAdmin(authentication);
+        boolean esMods = SecurityUtils.isMods(authentication);
+
+        usuarioColeccionService.eliminar(id, email, esAdmin, esMods);
         return ResponseEntity.noContent().build();
     }
 }
