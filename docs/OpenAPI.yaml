@@ -22,6 +22,9 @@ tags:
     description: Relacion entre usuarios y colecciones
   - name: Usuario-Items
     description: Relacion entre usuarios e items
+  - name: Login
+    description: Operaciones de autenticación
+
 
 components:
   schemas:
@@ -1174,7 +1177,7 @@ paths:
                 message: Error interno del servidor
                 errors: { }
 
-  /colecciones/{id}:
+  /coleccione/{id}:
     get:
       tags:
         - Colecciones
@@ -1375,7 +1378,7 @@ paths:
                 message: Error interno del servidor
                 errors: { }
 
-  /colecciones/{id}/publico:
+  /coleccione/{id}/publico:
     patch:
       tags:
         - Colecciones
@@ -1471,7 +1474,7 @@ paths:
                 message: Error interno del servidor
                 errors: { }
 
-  /colecciones/{id}/plantilla:
+  /coleccione/{id}/plantilla:
     patch:
       tags:
         - Colecciones
@@ -3100,6 +3103,103 @@ paths:
                 statusCode: 404
                 message: Usuario-Item con id 999 no encontrado
                 errors: { }
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: { }
+
+  /auth/login:
+    post:
+      tags:
+        - Autenticación
+      summary: Iniciar sesión
+      description: Logea a un usuario con email y contraseña
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - contrasena
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: nerea@gmail.com
+                contrasena:
+                  type: string
+                  example: contraseñasuperlargaencriptada1
+            examples:
+              loginUsuario:
+                summary: Login de usuario normal
+                value:
+                  email: nerea@gmail.com
+                  contrasena: contraseñasuperlargaencriptada1
+              loginAdmin:
+                summary: Login de administrador
+                value:
+                  email: admin@fancollector.com
+                  contrasena: admin123
+      responses:
+        '200':
+          description: Login exitoso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioOutDTO'
+              examples:
+                usuarioLogueado:
+                  summary: Usuario autenticado correctamente
+                  value:
+                    id: 1
+                    nombre: Nerea
+                    email: nerea@gmail.com
+                    rol: USER
+                    urlAvatar: nerea.jpg
+                    descripcion: Fan de BTS y anime
+                    contactoPublico: "@nereatest"
+                    fechaRegistro: "2025-12-01T10:30:00"
+                adminLogueado:
+                  summary: Administrador autenticado
+                  value:
+                    id: 2
+                    nombre: Admin
+                    email: admin@gmail.com
+                    rol: ADMIN
+                    urlAvatar: null
+                    descripcion: null
+                    contactoPublico: null
+                    fechaRegistro: "2025-01-01T00:00:00"
+        '401':
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 401
+                message: Email o contraseña incorrectos
+                errors: { }
+        '400':
+          description: Datos de entrada inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 400
+                message: Errores de validación
+                errors:
+                  email: El email no puede estar en blanco
+                  contrasena: La contraseña no puede estar en blanco
         '500':
           description: Error interno del servidor
           content:
