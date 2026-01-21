@@ -7,11 +7,13 @@ import com.svalero.fancollector.dto.patches.ColeccionPlantillaDTO;
 import com.svalero.fancollector.dto.patches.ColeccionPublicoDTO;
 import com.svalero.fancollector.exception.domain.ColeccionNoEncontradaException;
 import com.svalero.fancollector.exception.domain.UsuarioNoEncontradoException;
+import com.svalero.fancollector.security.auth.SecurityUtils;
 import com.svalero.fancollector.service.ColeccionService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,9 +28,13 @@ public class ColeccionController {
     private ColeccionService coleccionService;
 
     @PostMapping
-    public ResponseEntity<ColeccionOutDTO> crearColeccion(@Valid @RequestBody ColeccionInDTO dto)
+    public ResponseEntity<ColeccionOutDTO> crearColeccion(
+            @Valid @RequestBody ColeccionInDTO dto,
+            Authentication authentication)
             throws UsuarioNoEncontradoException {
-        return new ResponseEntity<>(coleccionService.crearColeccion(dto), HttpStatus.CREATED);
+        String email = SecurityUtils.email(authentication);
+
+        return new ResponseEntity<>(coleccionService.crearColeccion(dto,  email), HttpStatus.CREATED);
     }
 
     @GetMapping
@@ -36,54 +42,77 @@ public class ColeccionController {
             @RequestParam(required = false) String nombre,
             @RequestParam(required = false) String categoria,
             @RequestParam(required = false) Long idCreador,
-            @RequestParam(required = false) String nombreCreador) {
-        return ResponseEntity.ok
-                (coleccionService.listarColecciones(nombre, categoria, idCreador, nombreCreador));
+            @RequestParam(required = false) String nombreCreador,
+            Authentication authentication)
+            throws UsuarioNoEncontradoException {
+        String email = SecurityUtils.email(authentication);
+        boolean esAdmin = SecurityUtils.isAdmin(authentication);
+        boolean esMods = SecurityUtils.isMods(authentication);
+
+        return ResponseEntity.ok(coleccionService.listarColecciones(nombre, categoria, idCreador, nombreCreador, email, esAdmin, esMods));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ColeccionOutDTO> buscarColeccion(@PathVariable Long id)
-            throws ColeccionNoEncontradaException {
-        return ResponseEntity.ok(coleccionService.buscarColeccionPorId(id));
+    public ResponseEntity<ColeccionOutDTO> buscarColeccion(
+            @PathVariable Long id,
+            Authentication authentication)
+            throws ColeccionNoEncontradaException, UsuarioNoEncontradoException {
+        String email = SecurityUtils.email(authentication);
+        boolean esAdmin = SecurityUtils.isAdmin(authentication);
+        boolean esMods = SecurityUtils.isMods(authentication);
+
+        return ResponseEntity.ok(coleccionService.buscarColeccionPorId(id, email, esAdmin, esMods));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ColeccionOutDTO> actualizarColeccion(
             @PathVariable Long id,
-            @Valid @RequestBody ColeccionPutDTO dto
-    ) throws ColeccionNoEncontradaException, UsuarioNoEncontradoException {
-        return ResponseEntity.ok(coleccionService.actualizarColeccion(id, dto));
+            @Valid @RequestBody ColeccionPutDTO dto,
+            Authentication authentication)
+            throws ColeccionNoEncontradaException, UsuarioNoEncontradoException {
+        String email = SecurityUtils.email(authentication);
+        boolean esAdmin = SecurityUtils.isAdmin(authentication);
+        boolean esMods = SecurityUtils.isMods(authentication);
+
+        return ResponseEntity.ok(coleccionService.actualizarColeccion(id, dto, email, esAdmin, esMods));
     }
 
     @PatchMapping("/{id}/publico")
     public ResponseEntity<ColeccionOutDTO> actualizarEsPublica(
             @PathVariable Long id,
-            @Valid @RequestBody ColeccionPublicoDTO publicoDTO)
-            throws ColeccionNoEncontradaException {
+            @Valid @RequestBody ColeccionPublicoDTO publicoDTO,
+            Authentication authentication)
+            throws ColeccionNoEncontradaException, UsuarioNoEncontradoException {
+        String email = SecurityUtils.email(authentication);
+        boolean esAdmin = SecurityUtils.isAdmin(authentication);
+        boolean esMods = SecurityUtils.isMods(authentication);
 
-        ColeccionOutDTO coleccionActualizada = coleccionService.actualizarEsPublica(
-                id,
-                publicoDTO.getEsPublica());
-        return ResponseEntity.ok(coleccionActualizada);
+        return ResponseEntity.ok(coleccionService.actualizarEsPublica(id, publicoDTO.getEsPublica(), email, esAdmin, esMods));
     }
 
     @PatchMapping("/{id}/plantilla")
     public ResponseEntity<ColeccionOutDTO> actualizarUsableComoPlantilla(
             @PathVariable Long id,
-            @Valid @RequestBody ColeccionPlantillaDTO plantillaDTO)
+            @Valid @RequestBody ColeccionPlantillaDTO plantillaDTO,
+            Authentication authentication)
             throws ColeccionNoEncontradaException {
 
-        ColeccionOutDTO coleccionActualizada = coleccionService.actualizarUsableComoPlantilla(
-                id,
-                plantillaDTO.getUsableComoPlantilla()
-        );
-        return ResponseEntity.ok(coleccionActualizada);
+        String email = SecurityUtils.email(authentication);
+        boolean esAdmin = SecurityUtils.isAdmin(authentication);
+
+        return ResponseEntity.ok(coleccionService.actualizarUsableComoPlantilla(id, plantillaDTO.getUsableComoPlantilla(), email, esAdmin));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarColeccion(@PathVariable Long id)
-            throws ColeccionNoEncontradaException {
-        coleccionService.eliminarColeccion(id);
+    public ResponseEntity<Void> eliminarColeccion(
+            @PathVariable Long id,
+            Authentication authentication)
+            throws ColeccionNoEncontradaException, UsuarioNoEncontradoException  {
+        String email = SecurityUtils.email(authentication);
+        boolean esAdmin = SecurityUtils.isAdmin(authentication);
+        boolean esMods = SecurityUtils.isMods(authentication);
+        coleccionService.eliminarColeccion(id, email, esAdmin, esMods);
+
         return ResponseEntity.noContent().build();
     }
 }

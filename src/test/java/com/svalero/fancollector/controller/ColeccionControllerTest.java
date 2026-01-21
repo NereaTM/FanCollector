@@ -7,30 +7,41 @@ import com.svalero.fancollector.dto.ColeccionPutDTO;
 import com.svalero.fancollector.dto.patches.ColeccionPlantillaDTO;
 import com.svalero.fancollector.dto.patches.ColeccionPublicoDTO;
 import com.svalero.fancollector.exception.domain.ColeccionNoEncontradaException;
+import com.svalero.fancollector.security.jwt.JwtService;
 import com.svalero.fancollector.service.ColeccionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ColeccionController.class)
+@WithMockUser(username = "nerea@test.com", roles = {"ADMIN"})
 public class ColeccionControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @MockitoBean
+    private JwtService jwtService;
+
+    @MockitoBean
+    private UserDetailsService userDetailsService;
 
     @MockitoBean
     private ColeccionService coleccionService;
@@ -58,7 +69,8 @@ public class ColeccionControllerTest {
 
         List<ColeccionOutDTO> colecciones = List.of(coleccion1, coleccion2);
 
-        when(coleccionService.listarColecciones(null, null, null, null)).thenReturn(colecciones);
+        when(coleccionService.listarColecciones(eq(null), eq(null), eq(null), eq(null), anyString(), anyBoolean(), anyBoolean()))
+                .thenReturn(colecciones);
 
         mockMvc.perform(get("/colecciones")
                         .accept(MediaType.APPLICATION_JSON))
@@ -74,7 +86,8 @@ public class ColeccionControllerTest {
         coleccionOutDTO.setNombre("Figuras Anime");
         coleccionOutDTO.setCategoria("Anime");
 
-        when(coleccionService.buscarColeccionPorId(1L)).thenReturn(coleccionOutDTO);
+        when(coleccionService.buscarColeccionPorId(eq(1L), anyString(), anyBoolean(), anyBoolean()))
+                .thenReturn(coleccionOutDTO);
 
         mockMvc.perform(get("/colecciones/1")
                         .accept(MediaType.APPLICATION_JSON))
@@ -85,9 +98,8 @@ public class ColeccionControllerTest {
 
     @Test
     public void testBuscarColeccionPorIdNoExiste() throws Exception {
-        when(coleccionService.buscarColeccionPorId(999L))
+        when(coleccionService.buscarColeccionPorId(eq(999L), anyString(), anyBoolean(), anyBoolean()))
                 .thenThrow(new ColeccionNoEncontradaException(999L));
-
         mockMvc.perform(get("/colecciones/999")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
@@ -106,9 +118,11 @@ public class ColeccionControllerTest {
         savedDto.setNombre("Figuras Anime");
         savedDto.setCategoria("Anime");
 
-        when(coleccionService.crearColeccion(any(ColeccionInDTO.class))).thenReturn(savedDto);
+        when(coleccionService.crearColeccion(any(ColeccionInDTO.class), anyString()))
+                .thenReturn(savedDto);
 
         mockMvc.perform(post("/colecciones")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(coleccionInDTO))
                         .accept(MediaType.APPLICATION_JSON))
@@ -120,6 +134,7 @@ public class ColeccionControllerTest {
     @Test
     public void testCrearColeccionBodyInvalido() throws Exception {
         mockMvc.perform(post("/colecciones")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}")
                         .accept(MediaType.APPLICATION_JSON))
@@ -136,10 +151,12 @@ public class ColeccionControllerTest {
         response.setId(1L);
         response.setNombre("Figuras Anime Actualizado");
 
-        when(coleccionService.actualizarColeccion(eq(1L), any(ColeccionPutDTO.class)))
+        when(coleccionService.actualizarColeccion(
+                eq(1L), any(ColeccionPutDTO.class), anyString(), anyBoolean(), anyBoolean()))
                 .thenReturn(response);
 
         mockMvc.perform(put("/colecciones/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(coleccionPutDTO)))
                 .andExpect(status().isOk())
@@ -152,10 +169,12 @@ public class ColeccionControllerTest {
         coleccionPutDTO.setNombre("Figuras Anime");
         coleccionPutDTO.setCategoria("Anime");
 
-        when(coleccionService.actualizarColeccion(eq(1L), any(ColeccionPutDTO.class)))
+        when(coleccionService.actualizarColeccion(
+                eq(1L), any(ColeccionPutDTO.class), anyString(), anyBoolean(), anyBoolean()))
                 .thenThrow(new ColeccionNoEncontradaException(1L));
 
         mockMvc.perform(put("/colecciones/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(coleccionPutDTO)))
                 .andExpect(status().isNotFound());
@@ -164,6 +183,7 @@ public class ColeccionControllerTest {
     @Test
     public void testModificarColeccionBodyInvalido() throws Exception {
         mockMvc.perform(put("/colecciones/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest());
@@ -178,9 +198,10 @@ public class ColeccionControllerTest {
         response.setId(1L);
         response.setEsPublica(true);
 
-        when(coleccionService.actualizarEsPublica(eq(1L), eq(true))).thenReturn(response);
-
+        when(coleccionService.actualizarEsPublica(eq(1L), eq(true), anyString(), anyBoolean(), anyBoolean()))
+                .thenReturn(response);
         mockMvc.perform(patch("/colecciones/1/publico")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(publicoDTO)))
                 .andExpect(status().isOk())
@@ -196,9 +217,10 @@ public class ColeccionControllerTest {
         response.setId(1L);
         response.setUsableComoPlantilla(true);
 
-        when(coleccionService.actualizarUsableComoPlantilla(eq(1L), eq(true))).thenReturn(response);
-
+        when(coleccionService.actualizarUsableComoPlantilla(eq(1L), eq(true), anyString(), anyBoolean()))
+                .thenReturn(response);
         mockMvc.perform(patch("/colecciones/1/plantilla")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(plantillaDTO)))
                 .andExpect(status().isOk())
@@ -207,16 +229,18 @@ public class ColeccionControllerTest {
 
     @Test
     public void testEliminarColeccionExistente() throws Exception {
-        mockMvc.perform(delete("/colecciones/1"))
+        mockMvc.perform(delete("/colecciones/1")
+                        .with(csrf()))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     public void testEliminarColeccionNoExiste() throws Exception {
         doThrow(new ColeccionNoEncontradaException(1L))
-                .when(coleccionService).eliminarColeccion(1L);
+                .when(coleccionService).eliminarColeccion(eq(1L), anyString(), anyBoolean(), anyBoolean());
 
-        mockMvc.perform(delete("/colecciones/1"))
+        mockMvc.perform(delete("/colecciones/1")
+                        .with(csrf()))
                 .andExpect(status().isNotFound());
     }
 }

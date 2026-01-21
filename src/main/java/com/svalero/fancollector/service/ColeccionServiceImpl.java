@@ -7,8 +7,11 @@ import com.svalero.fancollector.dto.ColeccionOutDTO;
 import com.svalero.fancollector.dto.ColeccionPutDTO;
 import com.svalero.fancollector.exception.domain.ColeccionNoEncontradaException;
 import com.svalero.fancollector.exception.domain.UsuarioNoEncontradoException;
+import com.svalero.fancollector.exception.security.AccesoDenegadoException;
 import com.svalero.fancollector.repository.ColeccionRepository;
 import com.svalero.fancollector.repository.UsuarioRepository;
+import com.svalero.fancollector.security.auth.CurrentUserResolver;
+import com.svalero.fancollector.security.auth.Permisos;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,66 +25,78 @@ public class ColeccionServiceImpl implements ColeccionService {
     @Autowired
     private ColeccionRepository coleccionRepository;
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
 
     @Autowired
     private ModelMapper modelMapper;
 
-    @Override
-    public ColeccionOutDTO crearColeccion(ColeccionInDTO dto) throws UsuarioNoEncontradoException {
+    @Autowired
+    private CurrentUserResolver currentUserResolver;
 
-        Usuario creador = usuarioRepository.findById(dto.getIdCreador())
-                .orElseThrow(() -> new UsuarioNoEncontradoException(dto.getIdCreador()));
+    @Override
+    public ColeccionOutDTO crearColeccion(ColeccionInDTO dto, String emailUsuario)
+            throws UsuarioNoEncontradoException {
+
+        Usuario creador = currentUserResolver.usuarioActual(emailUsuario);
 
         Coleccion coleccion = modelMapper.map(dto, Coleccion.class);
         coleccion.setCreador(creador);
 
         Coleccion guardada = coleccionRepository.save(coleccion);
-
-        ColeccionOutDTO out = modelMapper.map(guardada, ColeccionOutDTO.class);
-
-        return out;
+        return modelMapper.map(guardada, ColeccionOutDTO.class);
     }
 
     @Override
-    public ColeccionOutDTO buscarColeccionPorId(Long id) throws ColeccionNoEncontradaException {
+    public ColeccionOutDTO buscarColeccionPorId(Long id, String emailUsuario, boolean esAdmin, boolean esMods)
+            throws ColeccionNoEncontradaException {
         Coleccion coleccion = coleccionRepository.findById(id)
                 .orElseThrow(() -> new ColeccionNoEncontradaException(id));
+
+        Usuario actual = currentUserResolver.usuarioActual(emailUsuario);
+
+        Permisos.checkPuedeVerColeccion(coleccion, actual, esAdmin);
 
         return modelMapper.map(coleccion, ColeccionOutDTO.class);
     }
 
     @Override
-    public List<ColeccionOutDTO> listarColecciones(String nombre, String categoria, Long idCreador, String nombreCreador) {
-
-        boolean noHayFiltros = true;
-
-        if (nombre != null && !nombre.isBlank()) noHayFiltros = false;
-        if (categoria != null && !categoria.isBlank()) noHayFiltros = false;
-        if (idCreador != null) noHayFiltros = false;
-        if (nombreCreador != null && !nombreCreador.isBlank()) noHayFiltros = false;
+    public List<ColeccionOutDTO> listarColecciones(String nombre, String categoria, Long idCreador, String nombreCreador, String emailUsuario, boolean esAdmin, boolean esMods) {
 
         List<Coleccion> colecciones;
-
+        boolean noHayFiltros = (nombre == null || nombre.isBlank()) &&
+                (categoria == null || categoria.isBlank()) &&
+                (idCreador == null) &&
+                (nombreCreador == null || nombreCreador.isBlank());
         if (noHayFiltros) {
             colecciones = coleccionRepository.findAll();
         } else {
             colecciones = coleccionRepository.buscarPorFiltros(nombre, categoria, idCreador, nombreCreador);
         }
+        //cuando no estoy logeada
+        if (emailUsuario == null || emailUsuario.isBlank()) {
+            return colecciones.stream()
+                    .filter(Coleccion::isEsPublica)
+                    .map(c -> modelMapper.map(c, ColeccionOutDTO.class))
+                    .toList();
+        }
+        //cuando estoy logeada
+        Usuario actual = currentUserResolver.usuarioActual(emailUsuario);
 
-        List<ColeccionOutDTO> resultado = new ArrayList<>();
-        for (Coleccion c : colecciones) {resultado.add(modelMapper.map(c, ColeccionOutDTO.class));}
-        return resultado;
+         return colecciones.stream()
+                .filter(c -> Permisos.puedeVerColeccion(c, actual, esAdmin))
+                .map(c -> modelMapper.map(c, ColeccionOutDTO.class))
+                .toList();
     }
 
 
     @Override
-    public ColeccionOutDTO actualizarColeccion(Long id, ColeccionPutDTO dto)
+    public ColeccionOutDTO actualizarColeccion(Long id, ColeccionPutDTO dto, String emailUsuario, boolean esAdmin, boolean esMods)
             throws ColeccionNoEncontradaException, UsuarioNoEncontradoException {
 
         Coleccion existente = coleccionRepository.findById(id)
                 .orElseThrow(() -> new ColeccionNoEncontradaException(id));
+
+        Usuario actual = currentUserResolver.usuarioActual(emailUsuario);
+        Permisos.checkPuedeEditarOBorrarColeccion(existente, actual, esAdmin, esMods);
 
         existente.setNombre(dto.getNombre());
         existente.setDescripcion(dto.getDescripcion());
@@ -94,40 +109,45 @@ public class ColeccionServiceImpl implements ColeccionService {
     }
 
     @Override
-    public ColeccionOutDTO actualizarEsPublica(Long id, Boolean esPublica)
-            throws ColeccionNoEncontradaException {
+    public ColeccionOutDTO actualizarEsPublica(Long id, Boolean esPublica, String emailUsuario, boolean esAdmin, boolean esMods)
+            throws ColeccionNoEncontradaException, UsuarioNoEncontradoException {
 
         Coleccion coleccion = coleccionRepository.findById(id)
                 .orElseThrow(() -> new ColeccionNoEncontradaException(id));
+
+        Usuario actual = currentUserResolver.usuarioActual(emailUsuario);
+
+        Permisos.checkPuedeEditarOBorrarColeccion(coleccion, actual, esAdmin, esMods);
 
         coleccion.setEsPublica(esPublica);
 
-        return modelMapper.map(
-                coleccionRepository.save(coleccion),
-                ColeccionOutDTO.class
-        );
+        return modelMapper.map(coleccionRepository.save(coleccion), ColeccionOutDTO.class);
     }
 
     @Override
-    public ColeccionOutDTO actualizarUsableComoPlantilla(Long id, Boolean usableComoPlantilla)
-            throws ColeccionNoEncontradaException {
-
+    public ColeccionOutDTO actualizarUsableComoPlantilla(Long id, Boolean usableComoPlantilla, String emailUsuario, boolean esAdmin)
+            throws ColeccionNoEncontradaException, UsuarioNoEncontradoException {
         Coleccion coleccion = coleccionRepository.findById(id)
                 .orElseThrow(() -> new ColeccionNoEncontradaException(id));
+
+        Usuario actual = currentUserResolver.usuarioActual(emailUsuario);
+        if (!esAdmin && !Permisos.esCreador(coleccion, actual)) {throw new AccesoDenegadoException();}
 
         coleccion.setUsableComoPlantilla(usableComoPlantilla);
 
-        return modelMapper.map(
-                coleccionRepository.save(coleccion),
-                ColeccionOutDTO.class
-        );
+        return modelMapper.map(coleccionRepository.save(coleccion), ColeccionOutDTO.class);
     }
 
     @Override
-    public void eliminarColeccion(Long id) throws ColeccionNoEncontradaException {
+    public void eliminarColeccion(Long id, String emailUsuario, boolean esAdmin, boolean esMods)
+            throws ColeccionNoEncontradaException, UsuarioNoEncontradoException {
 
         Coleccion coleccion = coleccionRepository.findById(id)
                 .orElseThrow(() -> new ColeccionNoEncontradaException(id));
+
+        Usuario actual = currentUserResolver.usuarioActual(emailUsuario);
+
+        Permisos.checkPuedeEditarOBorrarColeccion(coleccion, actual, esAdmin, esMods);
 
         coleccionRepository.delete(coleccion);
     }
