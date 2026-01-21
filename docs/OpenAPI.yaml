@@ -991,10 +991,10 @@ paths:
                 message: Error interno del servidor
                 errors: { }
   # COLECCION
-  /coleccion:
+  /colecciones:
     post:
       tags:
-        - Coleccion
+        - Colecciones
       summary: Crear una nueva coleccion
       description: Crea una nueva coleccion en el sistema
       requestBody:
@@ -2040,10 +2040,10 @@ paths:
                 message: Error interno del servidor
                 errors: { }
   # USUARIO-COLECCION
-  /usuario-coleccion:
+  /usuario-colecciones:
     post:
       tags:
-        - Usuario-Coleccion
+        - Usuario-Colecciones
       summary: Crear relacion usuario-coleccion
       description: Asocia un usuario con una coleccion
       requestBody:
@@ -3117,7 +3117,7 @@ paths:
   /auth/login:
     post:
       tags:
-        - Autenticación
+        - Login
       summary: Iniciar sesión
       description: Logea a un usuario con email y contraseña
       requestBody:
@@ -3200,6 +3200,97 @@ paths:
                 errors:
                   email: El email no puede estar en blanco
                   contrasena: La contraseña no puede estar en blanco
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              example:
+                statusCode: 500
+                message: Error interno del servidor
+                errors: { }
+  /auth/registro:
+    post:
+      tags:
+        - Login
+      summary: Registrar un nuevo usuario
+      description: Registro
+      operationId: registro
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioInDTO'
+            examples:
+              registroBasico:
+                summary: Registro
+                value:
+                  nombre: Nuevo Usuario
+                  email: nuevo.usuario@gmail.com
+                  contrasena: password123
+              registroCompleto:
+                summary: Registro con todos los campos
+                value:
+                  nombre: Juan Coleccionista
+                  email: juan.coleccionista@gmail.com
+                  contrasena: securePass456
+                  urlAvatar: ejemplo/juan-avatar.jpg
+                  descripcion: Coleccionista de KPOP y anime
+                  contactoPublico: "@juancolecciona"
+      responses:
+        '201':
+          description: Usuario registrado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioOutDTO'
+              examples:
+                usuarioRegistrado:
+                  summary: Usuario
+                  value:
+                    id: 10
+                    nombre: Nuevo Usuario
+                    email: nuevo.usuario@gmail.com
+                    rol: USER
+                    urlAvatar: null
+                    descripcion: null
+                    contactoPublico: null
+                    fechaRegistro: "2025-12-15T10:30:00"
+                usuarioCompletoRegistrado:
+                  summary: Usuario con todos los campos registrado
+                  value:
+                    id: 11
+                    nombre: Juan Coleccionista
+                    email: juan.coleccionista@gmail.com
+                    rol: USER
+                    urlAvatar: ejemplo/juan-avatar.jpg
+                    descripcion: Coleccionista de KPOP y anime
+                    contactoPublico: "@juancolecciona"
+                    fechaRegistro: "2025-12-15T11:00:00"
+        '400':
+          description: Datos de entrada inválidos o email duplicado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRespuesta'
+              examples:
+                validacionError:
+                  summary: Errores de validación
+                  value:
+                    statusCode: 400
+                    message: Errores de validación
+                    errors:
+                      nombre: El nombre no puede estar en blanco
+                      email: El email debe tener un formato válido
+                      contrasena: La contraseña debe tener al menos 4 caracteres
+                emailDuplicado:
+                  summary: Email ya registrado
+                  value:
+                    statusCode: 400
+                    message: El email nuevo.usuario@gmail.com ya está registrado
+                    errors: { }
         '500':
           description: Error interno del servidor
           content:
