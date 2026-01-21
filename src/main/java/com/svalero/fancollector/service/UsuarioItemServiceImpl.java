@@ -12,11 +12,14 @@ import com.svalero.fancollector.exception.domain.ColeccionNoEncontradaException;
 import com.svalero.fancollector.exception.domain.ItemNoEncontradoException;
 import com.svalero.fancollector.exception.domain.UsuarioItemNoEncontradoException;
 import com.svalero.fancollector.exception.domain.UsuarioNoEncontradoException;
+import com.svalero.fancollector.exception.security.AccesoDenegadoException;
 import com.svalero.fancollector.exception.validation.RelacionYaExisteException;
 import com.svalero.fancollector.repository.ColeccionRepository;
 import com.svalero.fancollector.repository.ItemRepository;
 import com.svalero.fancollector.repository.UsuarioItemRepository;
 import com.svalero.fancollector.repository.UsuarioRepository;
+import com.svalero.fancollector.security.auth.CurrentUserResolver;
+import com.svalero.fancollector.security.auth.Permisos;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -42,10 +45,25 @@ public class UsuarioItemServiceImpl implements UsuarioItemService {
     @Autowired
     private ModelMapper modelMapper;
 
-    @Override
-    public UsuarioItemOutDTO crear(UsuarioItemInDTO dto)
-            throws UsuarioNoEncontradoException, ItemNoEncontradoException, ColeccionNoEncontradaException {
+    @Autowired
+    private CurrentUserResolver currentUserResolver;
 
+    @Override
+    public UsuarioItemOutDTO crear(UsuarioItemInDTO dto, String emailUsuario, boolean esAdmin, boolean esMods)
+            throws UsuarioNoEncontradoException, ItemNoEncontradoException, ColeccionNoEncontradaException {
+        Usuario usuarioActual = currentUserResolver.usuarioActual(emailUsuario);
+        Usuario usuarioDueno;
+        if (dto.getIdUsuario() != null) {
+            usuarioDueno = usuarioRepository.findById(dto.getIdUsuario())
+                    .orElseThrow(() -> new UsuarioNoEncontradoException(dto.getIdUsuario()));
+
+            // 🔒 Solo admin o el mismo usuario puede crear items para ese usuario
+            if (!esAdmin && !esMods && !Permisos.esElMismoUsuario(usuarioDueno, emailUsuario)) {
+                throw new AccesoDenegadoException("Solo puedes crear items para ti mismo");
+            }
+        } else {
+            usuarioDueno = usuarioActual;
+        }
         if (usuarioItemRepository.existsByUsuarioIdAndColeccionIdAndItemId(
                 dto.getIdUsuario(), dto.getIdColeccion(), dto.getIdItem())) {
             throw new RelacionYaExisteException();
@@ -56,6 +74,8 @@ public class UsuarioItemServiceImpl implements UsuarioItemService {
 
         Coleccion coleccion = coleccionRepository.findById(dto.getIdColeccion())
                 .orElseThrow(() -> new ColeccionNoEncontradaException(dto.getIdColeccion()));
+
+        Permisos.checkPuedeVerColeccion(coleccion, usuarioActual, esAdmin);
 
         Item item = itemRepository.findById(dto.getIdItem())
                 .orElseThrow(() -> new ItemNoEncontradoException(dto.getIdItem()));
@@ -81,15 +101,22 @@ public class UsuarioItemServiceImpl implements UsuarioItemService {
     }
 
     @Override
-    public UsuarioItemOutDTO buscarPorId(Long id)throws UsuarioItemNoEncontradoException {
+    public UsuarioItemOutDTO buscarPorId(Long id, String emailUsuario, boolean esAdmin, boolean esMods)
+            throws UsuarioItemNoEncontradoException {
         UsuarioItem ui = usuarioItemRepository.findById(id)
                 .orElseThrow(() -> new UsuarioItemNoEncontradoException(id));
+
+        Usuario usuarioActual = (emailUsuario == null || emailUsuario.isBlank())
+                ? null
+                : currentUserResolver.usuarioActual(emailUsuario);
+        Permisos.checkPuedeVerUsuarioItem(ui, usuarioActual, esAdmin, esMods);
+
         return modelMapper.map(ui, UsuarioItemOutDTO.class);
     }
 
     @Override
-    public List<UsuarioItemOutDTO> listar(
-            Long idUsuario, Long idItem, Long idColeccion, EstadoItem estado, Boolean esVisible) {
+    public List<UsuarioItemOutDTO> listar(Long idUsuario, Long idItem, Long idColeccion, EstadoItem estado, Boolean esVisible,
+            String emailUsuario, boolean esAdmin, boolean esMods) {
 
         boolean noHayFiltros = true;
 
@@ -108,17 +135,29 @@ public class UsuarioItemServiceImpl implements UsuarioItemService {
                     idUsuario, idItem, idColeccion, estado, esVisible);
         }
 
+        Usuario usuarioActual = null;
+        if (emailUsuario != null && !emailUsuario.isBlank()) {
+            usuarioActual = currentUserResolver.usuarioActual(emailUsuario);
+        }
+
         List<UsuarioItemOutDTO> resultado = new ArrayList<>();
-        for (UsuarioItem ui : items) {resultado.add(modelMapper.map(ui, UsuarioItemOutDTO.class));}
+        for (UsuarioItem ui : items) {
+            if (Permisos.puedeVerUsuarioItem(ui, usuarioActual, esAdmin, esMods)) {
+                resultado.add(modelMapper.map(ui, UsuarioItemOutDTO.class));
+            }
+        }
         return resultado;
     }
 
     @Override
-    public UsuarioItemOutDTO actualizarCompleto(Long id, UsuarioItemPutDTO dto)
+    public UsuarioItemOutDTO actualizarCompleto(Long id, UsuarioItemPutDTO dto, String emailUsuario, boolean esAdmin, boolean esMods)
             throws UsuarioItemNoEncontradoException {
 
         UsuarioItem existente = usuarioItemRepository.findById(id)
                 .orElseThrow(() -> new UsuarioItemNoEncontradoException(id));
+
+        Usuario usuarioActual = currentUserResolver.usuarioActual(emailUsuario);
+        Permisos.checkPuedeEditarOBorrarUsuarioItem(existente, usuarioActual, esAdmin, esMods);
 
         if (dto.getEstado() != null) {
             existente.setEstado(dto.getEstado());
@@ -137,11 +176,14 @@ public class UsuarioItemServiceImpl implements UsuarioItemService {
     }
 
     @Override
-    public UsuarioItemOutDTO actualizarVisibilidad(Long id, Boolean esVisible)
+    public UsuarioItemOutDTO actualizarVisibilidad(Long id, Boolean esVisible, String emailUsuario, boolean esAdmin, boolean esMods)
             throws UsuarioItemNoEncontradoException {
 
         UsuarioItem usuarioItem = usuarioItemRepository.findById(id)
                 .orElseThrow(() -> new UsuarioItemNoEncontradoException(id));
+
+        Usuario usuarioActual = currentUserResolver.usuarioActual(emailUsuario);
+        Permisos.checkPuedeEditarOBorrarUsuarioItem(usuarioItem, usuarioActual, esAdmin, esMods);
 
         usuarioItem.setEsVisible(esVisible);
 
@@ -149,10 +191,14 @@ public class UsuarioItemServiceImpl implements UsuarioItemService {
     }
 
     @Override
-    public void eliminar(Long id) throws UsuarioItemNoEncontradoException {
+    public void eliminar(Long id, String emailUsuario, boolean esAdmin, boolean esMods)
+    throws UsuarioItemNoEncontradoException {
+        UsuarioItem usuarioItem = usuarioItemRepository.findById(id)
+                .orElseThrow(() -> new UsuarioItemNoEncontradoException(id));
 
-        if (!usuarioItemRepository.existsById(id))
-        {throw new UsuarioItemNoEncontradoException(id);}
+        Usuario usuarioActual = currentUserResolver.usuarioActual(emailUsuario);
+        Permisos.checkPuedeEditarOBorrarUsuarioItem(usuarioItem, usuarioActual, esAdmin, esMods);
+
         usuarioItemRepository.deleteById(id);
     }
 

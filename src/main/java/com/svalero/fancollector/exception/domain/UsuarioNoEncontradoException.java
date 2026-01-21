@@ -6,5 +6,11 @@ public class UsuarioNoEncontradoException extends RuntimeException {
         super("Usuario con id " + id + " no encontrado");
     }
 
+    public UsuarioNoEncontradoException(String mensaje) {
+        super(mensaje);
+    }
 
+    public static UsuarioNoEncontradoException porEmail(String email) {
+        return new UsuarioNoEncontradoException(email + " no encontrado");
+    }
 }

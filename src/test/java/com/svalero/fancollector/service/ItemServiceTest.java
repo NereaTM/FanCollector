@@ -2,14 +2,17 @@ package com.svalero.fancollector.service;
 
 import com.svalero.fancollector.domain.Coleccion;
 import com.svalero.fancollector.domain.Item;
+import com.svalero.fancollector.domain.Usuario;
 import com.svalero.fancollector.domain.enums.RarezaItem;
 import com.svalero.fancollector.dto.ItemInDTO;
 import com.svalero.fancollector.dto.ItemOutDTO;
 import com.svalero.fancollector.dto.ItemPutDTO;
 import com.svalero.fancollector.exception.domain.ColeccionNoEncontradaException;
 import com.svalero.fancollector.exception.domain.ItemNoEncontradoException;
+import com.svalero.fancollector.exception.domain.UsuarioNoEncontradoException;
 import com.svalero.fancollector.repository.ColeccionRepository;
 import com.svalero.fancollector.repository.ItemRepository;
+import com.svalero.fancollector.security.auth.CurrentUserResolver;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,6 +30,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class ItemServiceTest {
+    private static final String EMAIL = "nerea@test.com";
 
     @InjectMocks
     private ItemServiceImpl itemService;
@@ -40,17 +44,32 @@ public class ItemServiceTest {
     @Mock
     private ModelMapper modelMapper;
 
+    @Mock
+    private CurrentUserResolver currentUserResolver;
+
     @Test
-    public void testCrearItem() throws ColeccionNoEncontradaException {
+    public void testCrearItem() throws ColeccionNoEncontradaException, UsuarioNoEncontradoException {
+        boolean esAdmin = false;
+        boolean esMods = false;
+
         ItemInDTO itemInDTO = new ItemInDTO();
         itemInDTO.setIdColeccion(1L);
         itemInDTO.setNombre("Darkrai");
         itemInDTO.setTipo("Figura");
         itemInDTO.setRareza("LEGENDARIO");
 
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        usuario.setEmail(EMAIL);
+        usuario.setNombre("Nerea");
+
         Coleccion coleccion = new Coleccion();
         coleccion.setId(1L);
         coleccion.setNombre("Figuras Anime");
+        coleccion.setCreador(usuario);
+
+        when(coleccionRepository.findById(1L)).thenReturn(Optional.of(coleccion));
+        when(currentUserResolver.usuarioActual(EMAIL)).thenReturn(usuario);
 
         Item itemMapeado = new Item();
         itemMapeado.setNombre("Darkrai");
@@ -67,12 +86,11 @@ public class ItemServiceTest {
         itemOutDTO.setNombre("Darkrai");
         itemOutDTO.setRareza(RarezaItem.LEGENDARIO);
 
-        when(coleccionRepository.findById(1L)).thenReturn(Optional.of(coleccion));
         when(modelMapper.map(itemInDTO, Item.class)).thenReturn(itemMapeado);
         when(itemRepository.save(any(Item.class))).thenReturn(itemGuardado);
         when(modelMapper.map(itemGuardado, ItemOutDTO.class)).thenReturn(itemOutDTO);
 
-        ItemOutDTO resultado = itemService.crearItem(itemInDTO);
+        ItemOutDTO resultado = itemService.crearItem(itemInDTO, EMAIL, esAdmin, esMods);
 
         assertEquals(1L, resultado.getId());
         assertEquals("Darkrai", resultado.getNombre());
@@ -83,13 +101,16 @@ public class ItemServiceTest {
 
     @Test
     public void testCrearItemColeccionNoEncontrada() {
+        boolean esAdmin = false;
+        boolean esMods = false;
+
         ItemInDTO itemInDTO = new ItemInDTO();
         itemInDTO.setIdColeccion(999L);
 
         when(coleccionRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(ColeccionNoEncontradaException.class, () -> {
-            itemService.crearItem(itemInDTO);
+            itemService.crearItem(itemInDTO, EMAIL, esAdmin, esMods);
         });
 
         verify(coleccionRepository, times(1)).findById(999L);
@@ -97,7 +118,19 @@ public class ItemServiceTest {
     }
 
     @Test
-    public void testBuscarItemPorId() throws ItemNoEncontradoException {
+    public void testBuscarItemPorId() throws ItemNoEncontradoException, UsuarioNoEncontradoException {
+        boolean esAdmin = true;
+        boolean esMods = false;
+
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        usuario.setEmail(EMAIL);
+
+        Coleccion coleccion = new Coleccion();
+        coleccion.setId(1L);
+        coleccion.setCreador(usuario);
+        coleccion.setEsPublica(true);
+
         Item item = new Item();
         item.setId(1L);
         item.setNombre("Darkrai");
@@ -105,36 +138,55 @@ public class ItemServiceTest {
         ItemOutDTO itemOutDTO = new ItemOutDTO();
         itemOutDTO.setId(1L);
         itemOutDTO.setNombre("Darkrai");
+        item.setColeccion(coleccion);
 
         when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
         when(modelMapper.map(item, ItemOutDTO.class)).thenReturn(itemOutDTO);
 
-        ItemOutDTO resultado = itemService.buscarItemPorId(1L);
+        ItemOutDTO resultado = itemService.buscarItemPorId(1L, EMAIL, esAdmin, esMods);
 
         assertEquals(1L, resultado.getId());
         assertEquals("Darkrai", resultado.getNombre());
         verify(itemRepository, times(1)).findById(1L);
+        verify(currentUserResolver, times(1)).usuarioActual(EMAIL);
     }
 
     @Test
     public void testBuscarItemPorIdNoEncontrado() {
+        boolean esAdmin = true;
+        boolean esMods = false;
+
         when(itemRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(ItemNoEncontradoException.class, () -> {
-            itemService.buscarItemPorId(999L);
+            itemService.buscarItemPorId(999L, EMAIL, esAdmin, esMods);
         });
         verify(itemRepository, times(1)).findById(999L);
     }
 
     @Test
     public void testListarItems() {
+        boolean esAdmin = true;
+        boolean esMods = false;
+
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        usuario.setEmail(EMAIL);
+
+        Coleccion coleccion = new Coleccion();
+        coleccion.setId(1L);
+        coleccion.setCreador(usuario);
+        coleccion.setEsPublica(true);
+
         Item item1 = new Item();
         item1.setId(1L);
         item1.setNombre("Darkrai");
+        item1.setColeccion(coleccion);
 
         Item item2 = new Item();
         item2.setId(2L);
         item2.setNombre("Pikachu");
+        item2.setColeccion(coleccion);
 
         List<Item> items = List.of(item1, item2);
 
@@ -147,19 +199,24 @@ public class ItemServiceTest {
         dto2.setNombre("Pikachu");
 
         when(itemRepository.findAll()).thenReturn(items);
+        when(currentUserResolver.usuarioActual(EMAIL)).thenReturn(usuario);
         when(modelMapper.map(item1, ItemOutDTO.class)).thenReturn(dto1);
         when(modelMapper.map(item2, ItemOutDTO.class)).thenReturn(dto2);
 
-        List<ItemOutDTO> resultado = itemService.listarItems(null, null, null, null);
+        List<ItemOutDTO> resultado = itemService.listarItems(null, null, null, null, EMAIL, esAdmin, esMods);
 
         assertEquals(2, resultado.size());
         assertEquals("Darkrai", resultado.get(0).getNombre());
         assertEquals("Pikachu", resultado.get(1).getNombre());
         verify(itemRepository, times(1)).findAll();
+        verify(currentUserResolver, times(1)).usuarioActual(EMAIL);
     }
 
     @Test
-    public void testActualizarItem() throws ItemNoEncontradoException {
+    public void testActualizarItem() throws ItemNoEncontradoException, UsuarioNoEncontradoException {
+        boolean esAdmin = true;
+        boolean esMods = false;
+
         ItemPutDTO itemPutDTO = new ItemPutDTO();
         itemPutDTO.setNombre("Darkrai");
         itemPutDTO.setRareza("EPICO");
@@ -182,7 +239,7 @@ public class ItemServiceTest {
         when(itemRepository.save(any(Item.class))).thenReturn(itemActualizado);
         when(modelMapper.map(itemActualizado, ItemOutDTO.class)).thenReturn(itemOutDTO);
 
-        ItemOutDTO resultado = itemService.actualizarItem(1L, itemPutDTO);
+        ItemOutDTO resultado = itemService.actualizarItem(1L, itemPutDTO, EMAIL, esAdmin, esMods);
 
         assertEquals("Darkrai Actualizado", resultado.getNombre());
         assertEquals(RarezaItem.EPICO, resultado.getRareza());
@@ -191,7 +248,10 @@ public class ItemServiceTest {
     }
 
     @Test
-    public void testActualizarRareza() throws ItemNoEncontradoException {
+    public void testActualizarRareza() throws ItemNoEncontradoException, UsuarioNoEncontradoException {
+        boolean esAdmin = true;
+        boolean esMods = false;
+
         Item item = new Item();
         item.setId(1L);
         item.setRareza(RarezaItem.COMUN);
@@ -204,7 +264,7 @@ public class ItemServiceTest {
         when(itemRepository.save(any(Item.class))).thenReturn(item);
         when(modelMapper.map(item, ItemOutDTO.class)).thenReturn(itemOutDTO);
 
-        ItemOutDTO resultado = itemService.actualizarRareza(1L, RarezaItem.LEGENDARIO);
+        ItemOutDTO resultado = itemService.actualizarRareza(1L, RarezaItem.LEGENDARIO, EMAIL, esAdmin, esMods);
 
         assertEquals(RarezaItem.LEGENDARIO, resultado.getRareza());
         verify(itemRepository, times(1)).findById(1L);
@@ -212,13 +272,16 @@ public class ItemServiceTest {
     }
 
     @Test
-    public void testEliminarItem() throws ItemNoEncontradoException {
+    public void testEliminarItem() throws ItemNoEncontradoException, UsuarioNoEncontradoException {
+        boolean esAdmin = true;
+        boolean esMods = false;
+
         Item item = new Item();
         item.setId(1L);
 
         when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
 
-        itemService.eliminarItem(1L);
+        itemService.eliminarItem(1L, EMAIL, esAdmin, esMods);
 
         verify(itemRepository, times(1)).findById(1L);
         verify(itemRepository, times(1)).delete(item);
@@ -226,10 +289,13 @@ public class ItemServiceTest {
 
     @Test
     public void testEliminarItemNoEncontrado() {
+        boolean esAdmin = true;
+        boolean esMods = false;
+
         when(itemRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(ItemNoEncontradoException.class, () -> {
-            itemService.eliminarItem(999L);
+            itemService.eliminarItem(999L, EMAIL, esAdmin, esMods);
         });
 
         verify(itemRepository, times(1)).findById(999L);
@@ -237,22 +303,31 @@ public class ItemServiceTest {
     }
 
     @Test
-    public void testCrearItemRarezaInvalida() {
+    public void testCrearItemRarezaInvalida() throws UsuarioNoEncontradoException {
+        boolean esAdmin = false;
+        boolean esMods = false;
+
         ItemInDTO itemInDTO = new ItemInDTO();
         itemInDTO.setIdColeccion(1L);
         itemInDTO.setNombre("Darkrai");
         itemInDTO.setRareza("INVALIDO");
 
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        usuario.setEmail(EMAIL);
+
         Coleccion coleccion = new Coleccion();
         coleccion.setId(1L);
+        coleccion.setCreador(usuario);
 
         Item item = new Item();
 
         when(coleccionRepository.findById(1L)).thenReturn(Optional.of(coleccion));
+        when(currentUserResolver.usuarioActual(EMAIL)).thenReturn(usuario);
         when(modelMapper.map(itemInDTO, Item.class)).thenReturn(item);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            itemService.crearItem(itemInDTO);
+            itemService.crearItem(itemInDTO, EMAIL, esAdmin, esMods);
         });
     }
 }

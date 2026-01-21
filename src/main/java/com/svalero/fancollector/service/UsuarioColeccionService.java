@@ -13,23 +13,23 @@ import java.util.List;
 
 public interface UsuarioColeccionService {
 
-    UsuarioColeccionOutDTO crear(UsuarioColeccionInDTO dto)
+    UsuarioColeccionOutDTO crear(UsuarioColeccionInDTO dto, String emailUsuario, boolean esAdmin, boolean esMods)
             throws UsuarioNoEncontradoException, ColeccionNoEncontradaException;
 
-    UsuarioColeccionOutDTO buscarPorId(Long id)
+    UsuarioColeccionOutDTO buscarPorId(Long id, String emailUsuario, boolean esAdmin, boolean esMods)
             throws UsuarioColeccionNoEncontradoException;
 
-    List<UsuarioColeccionOutDTO> listar(Long idUsuario, Long idColeccion, Boolean soloFavoritas, Boolean esVisible);
+    List<UsuarioColeccionOutDTO> listar(Long idUsuario, Long idColeccion, Boolean soloFavoritas, Boolean esVisible, String emailUsuario, boolean esAdmin, boolean esMods);
 
-    UsuarioColeccionOutDTO actualizar(Long id, UsuarioColeccionPutDTO dto)
+    UsuarioColeccionOutDTO actualizar(Long id, UsuarioColeccionPutDTO dto, String emailUsuario, boolean esAdmin, boolean esMods)
             throws UsuarioColeccionNoEncontradoException;
 
-    void eliminar(Long id)
-           throws UsuarioColeccionNoEncontradoException;
-
-    UsuarioColeccionOutDTO actualizarFavorita(Long id, UsuarioColeccionFavoritaDTO dto)
+    void eliminar(Long id, String emailUsuario, boolean esAdmin, boolean esMods)
             throws UsuarioColeccionNoEncontradoException;
 
-    UsuarioColeccionOutDTO actualizarVisible(Long id, UsuarioColeccionVisibleDTO dto)
+    UsuarioColeccionOutDTO actualizarFavorita(Long id, UsuarioColeccionFavoritaDTO dto, String emailUsuario, boolean esAdmin, boolean esMods)
+            throws UsuarioColeccionNoEncontradoException;
+
+    UsuarioColeccionOutDTO actualizarVisible(Long id, UsuarioColeccionVisibleDTO dto, String emailUsuario, boolean esAdmin, boolean esMods)
             throws UsuarioColeccionNoEncontradoException;
 }

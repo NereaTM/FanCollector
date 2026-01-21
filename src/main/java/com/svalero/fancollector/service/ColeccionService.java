@@ -10,23 +10,24 @@ import java.util.List;
 
 public interface ColeccionService {
 
-    ColeccionOutDTO crearColeccion(ColeccionInDTO datosColeccion)
+    ColeccionOutDTO crearColeccion(ColeccionInDTO datosColeccion, String emailUsuario)
             throws UsuarioNoEncontradoException;
 
-    ColeccionOutDTO buscarColeccionPorId(Long idColeccion)
+    ColeccionOutDTO buscarColeccionPorId(Long id, String emailUsuario, boolean esAdmin, boolean esMods)
             throws ColeccionNoEncontradaException;
 
-    List<ColeccionOutDTO> listarColecciones(String nombreColeccion, String categoriaColeccion, Long idCreador, String nombreCreador);
+    List<ColeccionOutDTO> listarColecciones(String nombre, String categoria, Long idCreador, String nombreCreador,String emailUsuario, boolean esAdmin, boolean esMods)
+            throws UsuarioNoEncontradoException;
 
-    ColeccionOutDTO actualizarColeccion(Long idColeccion, ColeccionPutDTO datosColeccion)
+    ColeccionOutDTO actualizarColeccion(Long id, ColeccionPutDTO dto, String emailUsuario, boolean esAdmin, boolean esMods)
             throws ColeccionNoEncontradaException;
 
-    void eliminarColeccion(Long idColeccion)
+    void eliminarColeccion(Long idColeccion, String emailUsuario, boolean esAdmin, boolean esMods)
             throws ColeccionNoEncontradaException;
 
-    ColeccionOutDTO actualizarEsPublica(Long id, Boolean esPublica)
+    ColeccionOutDTO actualizarEsPublica(Long id, Boolean esPublica, String emailUsuario, boolean esAdmin, boolean esMods)
             throws ColeccionNoEncontradaException;
 
-    ColeccionOutDTO actualizarUsableComoPlantilla(Long id, Boolean usableComoPlantilla)
+    ColeccionOutDTO actualizarUsableComoPlantilla(Long id, Boolean usableComoPlantilla,String emailUsuario, boolean esAdmin)
             throws ColeccionNoEncontradaException;
 }

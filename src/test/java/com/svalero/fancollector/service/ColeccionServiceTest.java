@@ -9,6 +9,7 @@ import com.svalero.fancollector.exception.domain.ColeccionNoEncontradaException;
 import com.svalero.fancollector.exception.domain.UsuarioNoEncontradoException;
 import com.svalero.fancollector.repository.ColeccionRepository;
 import com.svalero.fancollector.repository.UsuarioRepository;
+import com.svalero.fancollector.security.auth.CurrentUserResolver;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class ColeccionServiceTest {
+    private static final String EMAIL = "nerea@test.com";
 
     @InjectMocks
     private ColeccionServiceImpl coleccionService;
@@ -38,6 +40,9 @@ public class ColeccionServiceTest {
     @Mock
     private ModelMapper modelMapper;
 
+    @Mock
+    private CurrentUserResolver currentUserResolver;
+
     @Test
     public void testCrearColeccion() throws UsuarioNoEncontradoException {
         ColeccionInDTO coleccionInDTO = new ColeccionInDTO();
@@ -47,7 +52,10 @@ public class ColeccionServiceTest {
 
         Usuario usuario = new Usuario();
         usuario.setId(1L);
+        usuario.setEmail(EMAIL);
         usuario.setNombre("Nerea");
+
+        when(currentUserResolver.usuarioActual(EMAIL)).thenReturn(usuario);
 
         Coleccion coleccionMapeada = new Coleccion();
         coleccionMapeada.setNombre("Figuras Anime");
@@ -61,36 +69,38 @@ public class ColeccionServiceTest {
         coleccionOutDTO.setId(1L);
         coleccionOutDTO.setNombre("Figuras Anime");
 
-        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
         when(modelMapper.map(coleccionInDTO, Coleccion.class)).thenReturn(coleccionMapeada);
         when(coleccionRepository.save(any(Coleccion.class))).thenReturn(coleccionGuardada);
         when(modelMapper.map(coleccionGuardada, ColeccionOutDTO.class)).thenReturn(coleccionOutDTO);
 
-        ColeccionOutDTO resultado = coleccionService.crearColeccion(coleccionInDTO);
+        ColeccionOutDTO resultado = coleccionService.crearColeccion(coleccionInDTO, EMAIL);
 
         assertEquals(1L, resultado.getId());
         assertEquals("Figuras Anime", resultado.getNombre());
-        verify(usuarioRepository, times(1)).findById(1L);
+        verify(currentUserResolver, times(1)).usuarioActual(EMAIL);
         verify(coleccionRepository, times(1)).save(any(Coleccion.class));
     }
 
     @Test
     public void testCrearColeccionUsuarioNoEncontrado() {
         ColeccionInDTO coleccionInDTO = new ColeccionInDTO();
-        coleccionInDTO.setIdCreador(999L);
 
-        when(usuarioRepository.findById(999L)).thenReturn(Optional.empty());
+        when(currentUserResolver.usuarioActual(EMAIL)).thenThrow(new UsuarioNoEncontradoException(999L));
 
         assertThrows(UsuarioNoEncontradoException.class, () -> {
-            coleccionService.crearColeccion(coleccionInDTO);
+            coleccionService.crearColeccion(coleccionInDTO, EMAIL);
         });
 
-        verify(usuarioRepository, times(1)).findById(999L);
+        verify(currentUserResolver, times(1)).usuarioActual(EMAIL);
         verify(coleccionRepository, times(0)).save(any(Coleccion.class));
+        verifyNoInteractions(usuarioRepository);
     }
 
     @Test
     public void testBuscarColeccionPorId() throws ColeccionNoEncontradaException {
+        boolean esAdmin = true;
+        boolean esMods = false;
+
         Coleccion coleccion = new Coleccion();
         coleccion.setId(1L);
         coleccion.setNombre("Figuras Anime");
@@ -102,7 +112,7 @@ public class ColeccionServiceTest {
         when(coleccionRepository.findById(1L)).thenReturn(Optional.of(coleccion));
         when(modelMapper.map(coleccion, ColeccionOutDTO.class)).thenReturn(coleccionOutDTO);
 
-        ColeccionOutDTO resultado = coleccionService.buscarColeccionPorId(1L);
+        ColeccionOutDTO resultado = coleccionService.buscarColeccionPorId(1L, EMAIL, esAdmin, esMods);
 
         assertEquals(1L, resultado.getId());
         assertEquals("Figuras Anime", resultado.getNombre());
@@ -111,10 +121,13 @@ public class ColeccionServiceTest {
 
     @Test
     public void testBuscarColeccionPorIdNoEncontrada() {
+        boolean esAdmin = true;
+        boolean esMods = false;
+
         when(coleccionRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(ColeccionNoEncontradaException.class, () -> {
-            coleccionService.buscarColeccionPorId(999L);
+            coleccionService.buscarColeccionPorId(999L, EMAIL, esAdmin, esMods);
         });
 
         verify(coleccionRepository, times(1)).findById(999L);
@@ -122,6 +135,9 @@ public class ColeccionServiceTest {
 
     @Test
     public void testListarColecciones() {
+        boolean esAdmin = true;
+        boolean esMods = false;
+
         Coleccion coleccion1 = new Coleccion();
         coleccion1.setId(1L);
         coleccion1.setNombre("Figuras Anime");
@@ -144,7 +160,7 @@ public class ColeccionServiceTest {
         when(modelMapper.map(coleccion1, ColeccionOutDTO.class)).thenReturn(dto1);
         when(modelMapper.map(coleccion2, ColeccionOutDTO.class)).thenReturn(dto2);
 
-        List<ColeccionOutDTO> resultado = coleccionService.listarColecciones(null, null, null, null);
+        List<ColeccionOutDTO> resultado = coleccionService.listarColecciones(null, null, null, null, EMAIL, esAdmin, esMods);
 
         assertEquals(2, resultado.size());
         assertEquals("Figuras Anime", resultado.get(0).getNombre());
@@ -154,10 +170,12 @@ public class ColeccionServiceTest {
 
     @Test
     public void testActualizarColeccion() throws ColeccionNoEncontradaException {
+        boolean esAdmin = true;
+        boolean esMods = false;
+
         ColeccionPutDTO coleccionPutDTO = new ColeccionPutDTO();
         coleccionPutDTO.setNombre("Figuras Anime Actualizado");
         coleccionPutDTO.setCategoria("Anime");
-
         coleccionPutDTO.setEsPublica(false);
         coleccionPutDTO.setUsableComoPlantilla(false);
 
@@ -177,7 +195,7 @@ public class ColeccionServiceTest {
         when(coleccionRepository.save(any(Coleccion.class))).thenReturn(coleccionActualizada);
         when(modelMapper.map(coleccionActualizada, ColeccionOutDTO.class)).thenReturn(coleccionOutDTO);
 
-        ColeccionOutDTO resultado = coleccionService.actualizarColeccion(1L, coleccionPutDTO);
+        ColeccionOutDTO resultado = coleccionService.actualizarColeccion(1L, coleccionPutDTO, EMAIL, esAdmin, esMods);
 
         assertEquals("Figuras Anime Actualizado", resultado.getNombre());
         verify(coleccionRepository, times(1)).findById(1L);
@@ -185,7 +203,10 @@ public class ColeccionServiceTest {
     }
 
     @Test
-    public void testActualizarEsPublica() throws ColeccionNoEncontradaException {
+    public void testActualizarEsPublica() throws ColeccionNoEncontradaException, UsuarioNoEncontradoException {
+        boolean esAdmin = true;
+        boolean esMods = false;
+
         Coleccion coleccion = new Coleccion();
         coleccion.setId(1L);
         coleccion.setNombre("Figuras Anime");
@@ -199,7 +220,7 @@ public class ColeccionServiceTest {
         when(coleccionRepository.save(any(Coleccion.class))).thenReturn(coleccion);
         when(modelMapper.map(coleccion, ColeccionOutDTO.class)).thenReturn(coleccionOutDTO);
 
-        ColeccionOutDTO resultado = coleccionService.actualizarEsPublica(1L, true);
+        ColeccionOutDTO resultado = coleccionService.actualizarEsPublica(1L, true, EMAIL, esAdmin, esMods);
 
         assertTrue(resultado.isEsPublica());
         verify(coleccionRepository, times(1)).findById(1L);
@@ -207,7 +228,9 @@ public class ColeccionServiceTest {
     }
 
     @Test
-    public void testActualizarUsableComoPlantilla() throws ColeccionNoEncontradaException {
+    public void testActualizarUsableComoPlantilla() throws ColeccionNoEncontradaException, UsuarioNoEncontradoException {
+        boolean esAdmin = true;
+
         Coleccion coleccion = new Coleccion();
         coleccion.setId(1L);
         coleccion.setUsableComoPlantilla(false);
@@ -220,7 +243,7 @@ public class ColeccionServiceTest {
         when(coleccionRepository.save(any(Coleccion.class))).thenReturn(coleccion);
         when(modelMapper.map(coleccion, ColeccionOutDTO.class)).thenReturn(coleccionOutDTO);
 
-        ColeccionOutDTO resultado = coleccionService.actualizarUsableComoPlantilla(1L, true);
+        ColeccionOutDTO resultado = coleccionService.actualizarUsableComoPlantilla(1L, true, EMAIL, esAdmin);
 
         assertTrue(resultado.isUsableComoPlantilla());
         verify(coleccionRepository, times(1)).findById(1L);
@@ -229,12 +252,15 @@ public class ColeccionServiceTest {
 
     @Test
     public void testEliminarColeccion() throws ColeccionNoEncontradaException {
+        boolean esAdmin = true;
+        boolean esMods = false;
+
         Coleccion coleccion = new Coleccion();
         coleccion.setId(1L);
 
         when(coleccionRepository.findById(1L)).thenReturn(Optional.of(coleccion));
 
-        coleccionService.eliminarColeccion(1L);
+        coleccionService.eliminarColeccion(1L, EMAIL, esAdmin, esMods);
 
         verify(coleccionRepository, times(1)).findById(1L);
         verify(coleccionRepository, times(1)).delete(coleccion);
@@ -242,11 +268,13 @@ public class ColeccionServiceTest {
 
     @Test
     public void testEliminarColeccionNoEncontrada() {
+        boolean esAdmin = true;
+        boolean esMods = false;
+
         when(coleccionRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(ColeccionNoEncontradaException.class, () -> {
-            coleccionService.eliminarColeccion(999L);
-        });
+            coleccionService.eliminarColeccion(999L, EMAIL, esAdmin, esMods);});
 
         verify(coleccionRepository, times(1)).findById(999L);
         verify(coleccionRepository, times(0)).delete(any(Coleccion.class));

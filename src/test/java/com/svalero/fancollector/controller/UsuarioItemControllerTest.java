@@ -10,30 +10,43 @@ import com.svalero.fancollector.exception.domain.ColeccionNoEncontradaException;
 import com.svalero.fancollector.exception.domain.ItemNoEncontradoException;
 import com.svalero.fancollector.exception.domain.UsuarioItemNoEncontradoException;
 import com.svalero.fancollector.exception.domain.UsuarioNoEncontradoException;
+import com.svalero.fancollector.security.jwt.JwtService;
 import com.svalero.fancollector.service.UsuarioItemService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UsuarioItemController.class)
+@WithMockUser(username = "nerea@test.com", roles = {"USER"})
 public class UsuarioItemControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @MockitoBean private
+    JwtService jwtService;
+
+    @MockitoBean private
+    UserDetailsService userDetailsService;
 
     @MockitoBean
     private UsuarioItemService usuarioItemService;
@@ -67,7 +80,8 @@ public class UsuarioItemControllerTest {
 
         List<UsuarioItemOutDTO> lista = List.of(ui1, ui2);
 
-        when(usuarioItemService.listar(null, null, null, null, null)).thenReturn(lista);
+        when(usuarioItemService.listar(isNull(), isNull(), isNull(), isNull(), isNull(), anyString(), anyBoolean(), anyBoolean()))
+                .thenReturn(lista);
 
         mockMvc.perform(get("/usuario-items")
                         .accept(MediaType.APPLICATION_JSON))
@@ -89,7 +103,8 @@ public class UsuarioItemControllerTest {
         dto.setCantidad(2);
         dto.setEsVisible(true);
 
-        when(usuarioItemService.buscarPorId(1L)).thenReturn(dto);
+        when(usuarioItemService.buscarPorId(eq(1L), anyString(), anyBoolean(), anyBoolean()))
+                .thenReturn(dto);
 
         mockMvc.perform(get("/usuario-items/1")
                         .accept(MediaType.APPLICATION_JSON))
@@ -101,7 +116,7 @@ public class UsuarioItemControllerTest {
 
     @Test
     public void testBuscarUsuarioItemPorIdNoExiste() throws Exception {
-        when(usuarioItemService.buscarPorId(999L))
+        when(usuarioItemService.buscarPorId(eq(999L), anyString(), anyBoolean(), anyBoolean()))
                 .thenThrow(new UsuarioItemNoEncontradoException(999L));
 
         mockMvc.perform(get("/usuario-items/999")
@@ -127,9 +142,11 @@ public class UsuarioItemControllerTest {
         outDTO.setEstado(EstadoItem.TENGO);
         outDTO.setCantidad(2);
 
-        when(usuarioItemService.crear(any(UsuarioItemInDTO.class))).thenReturn(outDTO);
+        when(usuarioItemService.crear(any(UsuarioItemInDTO.class), anyString(), anyBoolean(), anyBoolean()))
+                .thenReturn(outDTO);
 
         mockMvc.perform(post("/usuario-items")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(inDTO))
                         .accept(MediaType.APPLICATION_JSON))
@@ -142,6 +159,7 @@ public class UsuarioItemControllerTest {
     @Test
     public void testCrearUsuarioItemBodyInvalido() throws Exception {
         mockMvc.perform(post("/usuario-items")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}")
                         .accept(MediaType.APPLICATION_JSON))
@@ -155,10 +173,11 @@ public class UsuarioItemControllerTest {
         inDTO.setIdItem(1L);
         inDTO.setIdColeccion(1L);
 
-        when(usuarioItemService.crear(any(UsuarioItemInDTO.class)))
+        when(usuarioItemService.crear(any(UsuarioItemInDTO.class), anyString(), anyBoolean(), anyBoolean()))
                 .thenThrow(new UsuarioNoEncontradoException(999L));
 
         mockMvc.perform(post("/usuario-items")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(inDTO)))
                 .andExpect(status().isNotFound());
@@ -171,10 +190,11 @@ public class UsuarioItemControllerTest {
         inDTO.setIdItem(999L);
         inDTO.setIdColeccion(1L);
 
-        when(usuarioItemService.crear(any(UsuarioItemInDTO.class)))
+        when(usuarioItemService.crear(any(UsuarioItemInDTO.class), anyString(), anyBoolean(), anyBoolean()))
                 .thenThrow(new ItemNoEncontradoException(999L));
 
         mockMvc.perform(post("/usuario-items")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(inDTO)))
                 .andExpect(status().isNotFound());
@@ -187,10 +207,11 @@ public class UsuarioItemControllerTest {
         inDTO.setIdItem(1L);
         inDTO.setIdColeccion(999L);
 
-        when(usuarioItemService.crear(any(UsuarioItemInDTO.class)))
+        when(usuarioItemService.crear(any(UsuarioItemInDTO.class), anyString(), anyBoolean(), anyBoolean()))
                 .thenThrow(new ColeccionNoEncontradaException(999L));
 
         mockMvc.perform(post("/usuario-items")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(inDTO)))
                 .andExpect(status().isNotFound());
@@ -209,10 +230,11 @@ public class UsuarioItemControllerTest {
         outDTO.setCantidad(3);
         outDTO.setEsVisible(false);
 
-        when(usuarioItemService.actualizarCompleto(eq(1L), any(UsuarioItemPutDTO.class)))
+        when(usuarioItemService.actualizarCompleto(eq(1L), any(UsuarioItemPutDTO.class), anyString(), anyBoolean(), anyBoolean()))
                 .thenReturn(outDTO);
 
         mockMvc.perform(put("/usuario-items/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(putDTO)))
                 .andExpect(status().isOk())
@@ -226,10 +248,11 @@ public class UsuarioItemControllerTest {
         UsuarioItemPutDTO putDTO = new UsuarioItemPutDTO();
         putDTO.setEstado(EstadoItem.TENGO);
 
-        when(usuarioItemService.actualizarCompleto(eq(1L), any(UsuarioItemPutDTO.class)))
+        when(usuarioItemService.actualizarCompleto(eq(1L), any(UsuarioItemPutDTO.class), anyString(), anyBoolean(), anyBoolean()))
                 .thenThrow(new UsuarioItemNoEncontradoException(1L));
 
         mockMvc.perform(put("/usuario-items/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(putDTO)))
                 .andExpect(status().isNotFound());
@@ -238,6 +261,7 @@ public class UsuarioItemControllerTest {
     @Test
     public void testModificarUsuarioItemJsonNoParseable() throws Exception {
         mockMvc.perform(put("/usuario-items/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"cantidad\": \"no es un número\"}"))
                 .andExpect(status().isInternalServerError())
@@ -253,10 +277,11 @@ public class UsuarioItemControllerTest {
         outDTO.setId(1L);
         outDTO.setEsVisible(false);
 
-        when(usuarioItemService.actualizarVisibilidad(eq(1L), eq(false)))
+        when(usuarioItemService.actualizarVisibilidad(eq(1L), eq(false), anyString(), anyBoolean(), anyBoolean()))
                 .thenReturn(outDTO);
 
         mockMvc.perform(patch("/usuario-items/1/visible")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(visibleDTO)))
                 .andExpect(status().isOk())
@@ -268,10 +293,11 @@ public class UsuarioItemControllerTest {
         UsuarioItemVisibleDTO visibleDTO = new UsuarioItemVisibleDTO();
         visibleDTO.setEsVisible(false);
 
-        when(usuarioItemService.actualizarVisibilidad(eq(999L), eq(false)))
+        when(usuarioItemService.actualizarVisibilidad(eq(999L), eq(false), anyString(), anyBoolean(), anyBoolean()))
                 .thenThrow(new UsuarioItemNoEncontradoException(999L));
 
         mockMvc.perform(patch("/usuario-items/999/visible")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(visibleDTO)))
                 .andExpect(status().isNotFound());
@@ -280,6 +306,7 @@ public class UsuarioItemControllerTest {
     @Test
     public void testActualizarVisibilidadBodyInvalido() throws Exception {
         mockMvc.perform(patch("/usuario-items/1/visible")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest());
@@ -287,16 +314,18 @@ public class UsuarioItemControllerTest {
 
     @Test
     public void testEliminarUsuarioItemExistente() throws Exception {
-        mockMvc.perform(delete("/usuario-items/1"))
+        mockMvc.perform(delete("/usuario-items/1")
+                        .with(csrf()))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     public void testEliminarUsuarioItemNoExiste() throws Exception {
         doThrow(new UsuarioItemNoEncontradoException(1L))
-                .when(usuarioItemService).eliminar(1L);
+                .when(usuarioItemService).eliminar(eq(1L), anyString(), anyBoolean(), anyBoolean());
 
-        mockMvc.perform(delete("/usuario-items/1"))
+        mockMvc.perform(delete("/usuario-items/1")
+                        .with(csrf()))
                 .andExpect(status().isNotFound());
     }
 }

@@ -4,11 +4,16 @@ import com.svalero.fancollector.domain.Usuario;
 import com.svalero.fancollector.domain.enums.RolUsuario;
 import com.svalero.fancollector.dto.UsuarioInDTO;
 import com.svalero.fancollector.dto.UsuarioOutDTO;
+import com.svalero.fancollector.dto.UsuarioPutDTO;
 import com.svalero.fancollector.exception.domain.UsuarioNoEncontradoException;
+import com.svalero.fancollector.exception.security.AccesoDenegadoException;
 import com.svalero.fancollector.exception.validation.EmailDuplicadoException;
 import com.svalero.fancollector.repository.UsuarioRepository;
+import com.svalero.fancollector.security.auth.Permisos;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -23,6 +28,9 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Autowired
     private ModelMapper modelMapper;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @Override
     public UsuarioOutDTO crearUsuario(UsuarioInDTO usuarioInDTO) {
         if (usuarioRepository.existsByEmail(usuarioInDTO.getEmail())) {
@@ -30,11 +38,21 @@ public class UsuarioServiceImpl implements UsuarioService {
         }
         Usuario usuario = modelMapper.map(usuarioInDTO, Usuario.class);
         usuario.setRol(RolUsuario.USER);
+        usuario.setContrasena(passwordEncoder.encode(usuarioInDTO.getContrasena()));
+        Usuario guardado = usuarioRepository.save(usuario);
+        return modelMapper.map(guardado, UsuarioOutDTO.class);
+    }
 
-        usuarioRepository.save(usuario);
-
-        UsuarioOutDTO resultado = modelMapper.map(usuario, UsuarioOutDTO.class);
-        return resultado;
+    @Override
+    public UsuarioOutDTO crearUsuarioComoAdmin(UsuarioInDTO dto, String emailUsuario, boolean esAdmin) {
+        if (!esAdmin) {throw new AccesoDenegadoException("No eres ADMIN");}
+        if (usuarioRepository.existsByEmail(dto.getEmail())) {throw new EmailDuplicadoException(dto.getEmail());
+        }
+        Usuario usuario = modelMapper.map(dto, Usuario.class);
+        usuario.setRol(RolUsuario.USER);
+        usuario.setContrasena(passwordEncoder.encode(dto.getContrasena()));
+        Usuario guardado = usuarioRepository.save(usuario);
+        return modelMapper.map(guardado, UsuarioOutDTO.class);
     }
 
     @Override
@@ -69,18 +87,22 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
-    public UsuarioOutDTO modificarUsuario(long id, UsuarioInDTO usuarioInDTO)
+    public UsuarioOutDTO modificarUsuario(
+            long id, UsuarioPutDTO dto, String emailUsuario, boolean esAdmin, boolean esMods)
             throws UsuarioNoEncontradoException {
-
-        System.out.println("Modificando usuario ID: " + id);
 
         Usuario existente = usuarioRepository.findById(id)
                 .orElseThrow(() -> new UsuarioNoEncontradoException(id));
 
-        existente.setNombre(usuarioInDTO.getNombre());
+        Permisos.checkPuedeEditarUsuario(existente, emailUsuario, esAdmin, esMods);
+
+        existente.setNombre(dto.getNombre());
+        existente.setUrlAvatar(dto.getUrlAvatar());
+        existente.setDescripcion(dto.getDescripcion());
+        existente.setContactoPublico(dto.getContactoPublico());
 
         // Validar email si cambió
-        String email = usuarioInDTO.getEmail();
+        String email = dto.getEmail();
         if (email != null && !email.equalsIgnoreCase(existente.getEmail())) {
             if (usuarioRepository.existsByEmailAndIdNot(email, id)) {
                 throw new EmailDuplicadoException(email);
@@ -88,40 +110,54 @@ public class UsuarioServiceImpl implements UsuarioService {
             existente.setEmail(email);
         }
 
-        // Actualizar contraseña solo si se la envia
-        if (usuarioInDTO.getContrasena() != null && !usuarioInDTO.getContrasena().isBlank()) {
-            existente.setContrasena(usuarioInDTO.getContrasena());
-        }
-
-        existente.setUrlAvatar(usuarioInDTO.getUrlAvatar());
-        existente.setDescripcion(usuarioInDTO.getDescripcion());
-        existente.setContactoPublico(usuarioInDTO.getContactoPublico());
-
-        usuarioRepository.save(existente);
-
-        return modelMapper.map(existente, UsuarioOutDTO.class);
+        Usuario guardado = usuarioRepository.save(existente);
+        return modelMapper.map(guardado, UsuarioOutDTO.class);
     }
 
     @Override
-    public UsuarioOutDTO actualizarContrasena(long id, String nuevaContrasena)
+    public UsuarioOutDTO actualizarContrasena(long id, String nuevaContrasena,  String emailUsuario, boolean esAdmin, boolean esMods)
+            throws UsuarioNoEncontradoException {
+
+        Usuario existente = usuarioRepository.findById(id)
+                .orElseThrow(() -> new UsuarioNoEncontradoException(id));
+
+        Permisos.checkPuedeEditarUsuario(existente, emailUsuario, esAdmin, esMods);
+
+        existente.setContrasena(passwordEncoder.encode(nuevaContrasena));
+        Usuario guardado = usuarioRepository.save(existente);
+        return modelMapper.map(guardado, UsuarioOutDTO.class);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @Override
+    public UsuarioOutDTO actualizarRol(long id, RolUsuario nuevoRol, String emailUsuario)
             throws UsuarioNoEncontradoException {
 
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new UsuarioNoEncontradoException(id));
+        // el admin no se puede autoeliminar
+        if (usuario.getEmail().equalsIgnoreCase(emailUsuario)
+                && nuevoRol != RolUsuario.ADMIN) {
+            throw new AccesoDenegadoException("No puedes quitarte el rol de ADMIN.");
+        }
 
-        usuario.setContrasena(nuevaContrasena);
-        usuarioRepository.save(usuario);
-
-        return modelMapper.map(usuario, UsuarioOutDTO.class);
+        usuario.setRol(nuevoRol);
+        Usuario guardado = usuarioRepository.save(usuario);
+        return modelMapper.map(guardado, UsuarioOutDTO.class);
     }
 
     @Override
-    public void borrarUsuario(long id) throws UsuarioNoEncontradoException {
+    public void borrarUsuario(long id, String emailUsuario, boolean esAdmin, boolean esMods)
+            throws UsuarioNoEncontradoException {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new UsuarioNoEncontradoException(id));
 
-        usuarioRepository.delete(usuario);
+        Permisos.checkPuedeEditarUsuario(usuario, emailUsuario, esAdmin, esMods);
+        // el admin no se puede autoeliminar
+        if (esAdmin && usuario.getEmail().equalsIgnoreCase(emailUsuario)) {
+            throw new AccesoDenegadoException("No puedes borrarte la cuenta a ti mismo");
+        }
 
-        System.out.println("Usuario " + id + " eliminado");
+        usuarioRepository.delete(usuario);
     }
 }

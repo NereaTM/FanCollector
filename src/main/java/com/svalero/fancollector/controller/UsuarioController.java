@@ -3,13 +3,16 @@ package com.svalero.fancollector.controller;
 import com.svalero.fancollector.domain.enums.RolUsuario;
 import com.svalero.fancollector.dto.UsuarioInDTO;
 import com.svalero.fancollector.dto.UsuarioOutDTO;
+import com.svalero.fancollector.dto.UsuarioPutDTO;
 import com.svalero.fancollector.dto.patches.UsuarioPasswordDTO;
+import com.svalero.fancollector.dto.patches.UsuarioRolDTO;
 import com.svalero.fancollector.exception.domain.UsuarioNoEncontradoException;
+import com.svalero.fancollector.security.auth.SecurityUtils;
 import com.svalero.fancollector.service.UsuarioService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,9 +27,13 @@ public class UsuarioController {
     private UsuarioService usuarioService;
 
     @PostMapping
-    public ResponseEntity<UsuarioOutDTO> crearUsuario(@Valid @RequestBody UsuarioInDTO usuarioInDTO) {
-        UsuarioOutDTO nuevoUsuario = usuarioService.crearUsuario(usuarioInDTO);
-        return new ResponseEntity<>(nuevoUsuario, HttpStatus.CREATED);
+    public ResponseEntity<UsuarioOutDTO> crearUsuarioComoAdmin(
+            @Valid @RequestBody UsuarioInDTO dto, Authentication authentication) {
+        String emailUsuario = SecurityUtils.email(authentication);
+        boolean esAdmin = SecurityUtils.isAdmin(authentication);
+
+        UsuarioOutDTO nuevoUsuario = usuarioService.crearUsuarioComoAdmin(dto, emailUsuario, esAdmin);
+        return ResponseEntity.status(201).body(nuevoUsuario);
     }
 
     @GetMapping
@@ -49,27 +56,57 @@ public class UsuarioController {
 
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioOutDTO> modificarUsuario(
-            @PathVariable long id, @Valid @RequestBody UsuarioInDTO usuarioInDTO)
-            throws UsuarioNoEncontradoException {
-        UsuarioOutDTO usuarioModificado = usuarioService.modificarUsuario(id, usuarioInDTO);
+            @PathVariable long id,
+            @Valid @RequestBody UsuarioPutDTO dto,
+            Authentication authentication) throws UsuarioNoEncontradoException {
+
+            String emailUsuario = SecurityUtils.email(authentication);
+            boolean esAdmin = SecurityUtils.isAdmin(authentication);
+            boolean esMods = SecurityUtils.isMods(authentication);
+
+        UsuarioOutDTO usuarioModificado = usuarioService.modificarUsuario(id, dto, emailUsuario, esAdmin, esMods);
         return ResponseEntity.ok(usuarioModificado);
     }
 
     @PatchMapping("/{id}/contrasena")
     public ResponseEntity<UsuarioOutDTO> actualizarContrasena(
             @PathVariable long id,
-            @Valid @RequestBody UsuarioPasswordDTO passwordDTO)
+            @Valid @RequestBody UsuarioPasswordDTO passwordDTO,
+            Authentication authentication)
             throws UsuarioNoEncontradoException {
 
-        UsuarioOutDTO usuarioActualizado = usuarioService.actualizarContrasena(id, passwordDTO.getContrasena());
+        String emailUsuario = SecurityUtils.email(authentication);
+        boolean esAdmin = SecurityUtils.isAdmin(authentication);
+        boolean esMods = SecurityUtils.isMods(authentication);
+
+        UsuarioOutDTO usuarioActualizado = usuarioService.actualizarContrasena(id, passwordDTO.getContrasena(), emailUsuario, esAdmin, esMods);
         return ResponseEntity.ok(usuarioActualizado);
+    }
+
+    @PatchMapping("/{id}/rol")
+    public ResponseEntity<UsuarioOutDTO> actualizarRol(
+            @PathVariable long id,
+            @Valid @RequestBody UsuarioRolDTO dto,
+            Authentication authentication
+    ) throws UsuarioNoEncontradoException {
+
+        String emailUsuario = SecurityUtils.email(authentication);
+
+        UsuarioOutDTO actualizado = usuarioService.actualizarRol(id, dto.getRol(), emailUsuario);
+        return ResponseEntity.ok(actualizado);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> borrarUsuario(
-            @PathVariable long id)
+            @PathVariable long id,
+            Authentication authentication)
             throws UsuarioNoEncontradoException {
-        usuarioService.borrarUsuario(id);
+
+        String emailUsuario = SecurityUtils.email(authentication);
+        boolean esAdmin = SecurityUtils.isAdmin(authentication);
+        boolean esMods  = SecurityUtils.isMods(authentication);
+
+        usuarioService.borrarUsuario(id, emailUsuario, esAdmin, esMods);
         return ResponseEntity.noContent().build();
     }
 }

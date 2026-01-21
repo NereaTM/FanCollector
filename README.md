@@ -1,4 +1,4 @@
-# FanCollector
+# FanCollector 
 API diseñada para gestionar colecciones de items coleccionables (figuras, cartas, merchandising, etc.).
 
 ## Tecnologías utilizadas
@@ -9,6 +9,8 @@ API diseñada para gestionar colecciones de items coleccionables (figuras, carta
 ![MariaDB](https://img.shields.io/badge/MariaDB-003545?style=for-the-badge&logo=mariadb&logoColor=white)
 ![Git](https://img.shields.io/badge/git-%23F05033.svg?style=for-the-badge&logo=git&logoColor=white)
 ![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)
+![Spring Security](https://img.shields.io/badge/Spring_Security-6DB33F?style=for-the-badge&logo=Spring-Security&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=JSON%20web%20tokens&logoColor=white)
 
 ## Requisitos previos
 Antes de ejecutar el proyecto, asegúrate de tener instalado:
@@ -25,10 +27,12 @@ Antes de ejecutar el proyecto, asegúrate de tener instalado:
 - **/dto**: Entrada/salida de datos
 - **/exception**: Excepciones personalizadas
 - **/repository**: Repositorios JPA
+- **/security**: Configuración JWT y autenticación
 - **/service**: Lógica de negocio 
 - **/util**: Utilidades
 
 ### Endpoints
+- **Autenticación** (`/auth`)
 - **Usuarios** (`/usuarios`)
 - **Colecciones** (`/colecciones`)
 - **Items** (`/items`)
@@ -55,7 +59,7 @@ Antes de ejecutar el proyecto, asegúrate de tener instalado:
    ```bash
    docker-compose up -d
    ```
- **Nota:** No necesitas crear la base de datos manualmente. Docker Compose la crea automáticamente al levantar el contenedor.
+ _Nota: No necesitas crear la base de datos manualmente. Docker Compose la crea automáticamente al levantar el contenedor_
 
 4. **Ejecutar la aplicación**
    ```bash
@@ -63,6 +67,18 @@ Antes de ejecutar el proyecto, asegúrate de tener instalado:
    ```
 
 La API estará disponible en `http://localhost:8080`
+
+## Autenticación
+La API utiliza JWT para autenticación
+1. **Te registras**
+2. **Te logeas y devuelve un token** 
+3. **Usar el token**: Incluir en header `Authorization: Bearer {token}`
+
+### Roles disponibles
+- **ADMIN**: Poder absoluto (público y privado). Único que puede crear usuarios y asignar roles
+- **MODS**: Permisos de USER + editar/borrar contenido público
+- **USER**: Ver público, crear y gestionar sus propias colecciones/items, modificar perfil propio
+- **NO-AUTH**: Crear usuario nuevo y ver colecciones públicas
 
 ## Detener el proyecto
 
@@ -72,6 +88,9 @@ La API estará disponible en `http://localhost:8080`
 # Detener Docker:
 docker-compose down
 ```
+
+## Colección de Postman
+[Ver Postman](https://github.com/NereaTM/FanCollector/tree/develop/docs/postman)
 
 ---
 Proyecto escolar de DAM Curso 2025–2026
