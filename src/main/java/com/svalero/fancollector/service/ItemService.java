@@ -11,15 +11,17 @@ import java.util.List;
 
 public interface ItemService {
 
-    ItemOutDTO crearItem(ItemInDTO datosItem) throws ColeccionNoEncontradaException;
+    ItemOutDTO crearItem(ItemInDTO dto, String emailUsuario, boolean esAdmin, boolean esMods)
+            throws ColeccionNoEncontradaException;
 
-    ItemOutDTO buscarItemPorId(Long idItem) throws ItemNoEncontradoException;
+    ItemOutDTO buscarItemPorId(Long idItem, String emailUsuario, boolean esAdmin, boolean esMods)
+            throws ItemNoEncontradoException;
 
-    List<ItemOutDTO> listarItems(String nombre, String tipo, String rareza, Long idColeccion);
+    List<ItemOutDTO> listarItems(String nombre, String tipo, String rarezaStr, Long idColeccion, String emailUsuario, boolean esAdmin, boolean esMods);
 
-    ItemOutDTO actualizarItem(Long idItem, ItemPutDTO datosItem) throws ItemNoEncontradoException;
+    ItemOutDTO actualizarItem(Long idItem, ItemPutDTO datosItem, String emailUsuario, boolean esAdmin, boolean esMods) throws ItemNoEncontradoException;
 
-    void eliminarItem(Long idItem) throws ItemNoEncontradoException;
+    void eliminarItem(Long idItem, String emailUsuario, boolean esAdmin, boolean esMods) throws ItemNoEncontradoException;
 
-    ItemOutDTO actualizarRareza(Long id, RarezaItem rareza) throws ItemNoEncontradoException;
+    ItemOutDTO actualizarRareza(Long id, RarezaItem rareza, String emailUsuario, boolean esAdmin, boolean esModsa) throws ItemNoEncontradoException;
 }

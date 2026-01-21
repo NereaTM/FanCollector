@@ -2,14 +2,18 @@ package com.svalero.fancollector.service;
 
 import com.svalero.fancollector.domain.Coleccion;
 import com.svalero.fancollector.domain.Item;
+import com.svalero.fancollector.domain.Usuario;
 import com.svalero.fancollector.domain.enums.RarezaItem;
 import com.svalero.fancollector.dto.ItemInDTO;
 import com.svalero.fancollector.dto.ItemOutDTO;
 import com.svalero.fancollector.dto.ItemPutDTO;
 import com.svalero.fancollector.exception.domain.ColeccionNoEncontradaException;
 import com.svalero.fancollector.exception.domain.ItemNoEncontradoException;
+import com.svalero.fancollector.exception.domain.UsuarioNoEncontradoException;
 import com.svalero.fancollector.repository.ColeccionRepository;
 import com.svalero.fancollector.repository.ItemRepository;
+import com.svalero.fancollector.security.auth.CurrentUserResolver;
+import com.svalero.fancollector.security.auth.Permisos;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,11 +33,18 @@ public class ItemServiceImpl implements ItemService {
     @Autowired
     private ModelMapper modelMapper;
 
+    @Autowired
+    private CurrentUserResolver currentUserResolver;
+
     @Override
-    public ItemOutDTO crearItem(ItemInDTO datosItem) throws ColeccionNoEncontradaException {
+    public ItemOutDTO crearItem(ItemInDTO datosItem, String emailUsuario, boolean esAdmin, boolean esMods)
+            throws ColeccionNoEncontradaException  {
 
         Coleccion coleccion = coleccionRepository.findById(datosItem.getIdColeccion())
                 .orElseThrow(() -> new ColeccionNoEncontradaException(datosItem.getIdColeccion()));
+
+        Usuario actual = currentUserResolver.usuarioActual(emailUsuario);
+        Permisos.checkPuedeEditarOBorrarColeccion(coleccion, actual, esAdmin, esMods);
 
         Item item = modelMapper.map(datosItem, Item.class);
 
@@ -52,14 +63,17 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public ItemOutDTO buscarItemPorId(Long idItem) throws ItemNoEncontradoException {
+    public ItemOutDTO buscarItemPorId(Long idItem, String emailUsuario, boolean esAdmin, boolean esMods)
+            throws ItemNoEncontradoException {
         Item item = itemRepository.findById(idItem)
                 .orElseThrow(() -> new ItemNoEncontradoException(idItem));
+        Usuario actual = currentUserResolver.usuarioActual(emailUsuario);
+        Permisos.checkPuedeVerColeccion(item.getColeccion(), actual, esAdmin);
         return modelMapper.map(item, ItemOutDTO.class);
     }
 
     @Override
-    public List<ItemOutDTO> listarItems(String nombre, String tipo, String rarezaStr, Long idColeccion) {
+    public List<ItemOutDTO> listarItems(String nombre, String tipo, String rarezaStr, Long idColeccion, String emailUsuario, boolean esAdmin, boolean esMods) {
 
         List<Item> items;
         RarezaItem rareza = null;
@@ -79,18 +93,31 @@ public class ItemServiceImpl implements ItemService {
         } else {
             items = itemRepository.buscarPorFiltros(nombre, tipo, rareza, idColeccion);
         }
+        //sin logeo
+        if (emailUsuario == null || emailUsuario.isBlank()) {
+            return items.stream()
+                    .filter(item -> item.getColeccion().isEsPublica())
+                    .map(item -> modelMapper.map(item, ItemOutDTO.class))
+                    .toList();
+        }
+        //con logeo
+        Usuario actual = currentUserResolver.usuarioActual(emailUsuario);
 
-        List<ItemOutDTO> resultado = new ArrayList<>();
-        for (Item item : items) {resultado.add(modelMapper.map(item, ItemOutDTO.class));}
-        return resultado;
+        return items.stream()
+                .filter(item -> Permisos.puedeVerColeccion(item.getColeccion(), actual, esAdmin))
+                .map(item -> modelMapper.map(item, ItemOutDTO.class))
+                .toList();
     }
 
     @Override
-    public ItemOutDTO actualizarItem(Long idItem, ItemPutDTO datosItem)
-            throws ItemNoEncontradoException {
+    public ItemOutDTO actualizarItem(Long idItem, ItemPutDTO datosItem, String emailUsuario, boolean esAdmin, boolean esMods)
+            throws ItemNoEncontradoException, UsuarioNoEncontradoException {
 
         Item existente = itemRepository.findById(idItem)
                 .orElseThrow(() -> new ItemNoEncontradoException(idItem));
+
+        Usuario actual = currentUserResolver.usuarioActual(emailUsuario);
+        Permisos.checkPuedeEditarOBorrarColeccion(existente.getColeccion(), actual, esAdmin, esMods);
 
         existente.setNombre(datosItem.getNombre());
         existente.setDescripcion(datosItem.getDescripcion());
@@ -112,11 +139,14 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public ItemOutDTO actualizarRareza(Long id, RarezaItem rareza)
-            throws ItemNoEncontradoException {
+    public ItemOutDTO actualizarRareza(Long id, RarezaItem rareza, String emailUsuario, boolean esAdmin, boolean esMods)
+            throws ItemNoEncontradoException, UsuarioNoEncontradoException {
 
         Item item = itemRepository.findById(id)
                 .orElseThrow(() -> new ItemNoEncontradoException(id));
+
+        Usuario actual = currentUserResolver.usuarioActual(emailUsuario);
+        Permisos.checkPuedeEditarOBorrarColeccion(item.getColeccion(), actual, esAdmin, esMods);
 
         item.setRareza(rareza);
 
@@ -125,11 +155,14 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public void eliminarItem(Long idItem)
-            throws ItemNoEncontradoException {
+    public void eliminarItem(Long idItem, String emailUsuario, boolean esAdmin, boolean esMods)
+            throws ItemNoEncontradoException, UsuarioNoEncontradoException {
 
         Item item = itemRepository.findById(idItem)
                 .orElseThrow(() -> new ItemNoEncontradoException(idItem));
+
+        Usuario actual = currentUserResolver.usuarioActual(emailUsuario);
+        Permisos.checkPuedeEditarOBorrarColeccion(item.getColeccion(), actual, esAdmin, esMods);
 
         itemRepository.delete(item);
     }
